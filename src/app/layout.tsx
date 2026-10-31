@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "StudyTable — สมุดจัดตารางอ่านหนังสือและการจัดการการบ้าน",
-  description:
-    "ระบบวางแผนตารางเวลาอ่านหนังสือ จัดการการบ้าน แตกงานย่อย นับถอยหลังวันสอบ และวิเคราะห์สถิติชั่วโมงเรียน สไตล์ Warm Academic Planner",
+  title: "เว็บไซต์ใหม่ — โครงสร้างโปรเจกต์พร้อมใช้งาน",
+  description: "โครงสร้างโปรเจกต์เว็บสมัยใหม่ Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui และ Drizzle ORM",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" className="scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -22,14 +23,17 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-[#FAF7F2] text-[#1E1B18] selection:bg-[#F9E3D8] selection:text-[#8F391A]">
-        {children}
+      <body className="min-h-screen flex flex-col bg-zinc-50 text-zinc-900 selection:bg-blue-100 selection:text-blue-900">
+        <Navbar />
+        <div className="flex-1">
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   );
 }
-
