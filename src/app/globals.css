@@ -11,6 +11,9 @@
   --ink-muted: #8a8177;
   --accent-terracotta: #c85a32;
   --accent-sage: #3d6b52;
+  --font-sans-thai: "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
+  --font-serif-editorial: "Fraunces", Georgia, serif;
+  --font-mono-code: "JetBrains Mono", Consolas, "Courier New", monospace;
 }
 
 body {
