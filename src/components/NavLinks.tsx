@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { Check, CloudAlert, Loader2, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { daysUntil } from "@/lib/study";
 
@@ -57,17 +59,31 @@ export function NavLinks({ className }: { className?: string }) {
 
 export function NavbarStatusOrCta() {
   const pathname = usePathname();
-  const { state, hydrated } = useStudyStore();
+  const { data: session, status } = useSession();
+  const { state, hydrated, syncStatus } = useStudyStore();
 
-  if (pathname === "/") {
-    return (
-      <Link href="/planner" className={buttonVariants({ size: "sm", className: "hidden md:inline-flex" })}>
-        เริ่มจัดตาราง
-      </Link>
-    );
+  if (status === "loading") {
+    return <div className="h-9 w-28 animate-pulse rounded-lg bg-paper-deep" />;
   }
 
-  if (!hydrated) return null;
+  if (!session?.user) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link
+          href="/signin"
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+        >
+          เข้าสู่ระบบ
+        </Link>
+        <Link
+          href="/signup"
+          className={buttonVariants({ variant: "default", size: "sm" })}
+        >
+          สมัครสมาชิก
+        </Link>
+      </div>
+    );
+  }
 
   const totalHours = state.blocks.reduce((sum, b) => sum + b.duration, 0);
   const allChapters = state.subjects.flatMap((s) => s.chapters);
@@ -77,30 +93,67 @@ export function NavbarStatusOrCta() {
     .sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
-    <div className="hidden items-center gap-2 text-xs font-medium md:flex">
-      <Link
-        href="/planner"
-        className="inline-flex items-center gap-1.5 rounded-full border border-terracotta/25 bg-terracotta-tint px-2.5 py-1 text-terracotta-deep transition-colors hover:border-terracotta/50"
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
-        <span className="font-mono font-semibold">{totalHours}</span> ชม./สัปดาห์
-      </Link>
-      <Link
-        href="/table"
-        className="inline-flex items-center gap-1.5 rounded-full border border-sage/25 bg-sage-tint px-2.5 py-1 text-sage-deep transition-colors hover:border-sage/50"
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-        อ่านจบ <span className="font-mono font-semibold">{doneChapters}/{allChapters.length}</span> บท
-      </Link>
-      {nextExam && (
-        <Link
-          href="/exam"
-          className="inline-flex items-center gap-1.5 rounded-full border border-mustard/30 bg-mustard-tint px-2.5 py-1 text-mustard-deep transition-colors hover:border-mustard/60"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-mustard" />
-          สอบถัดไป <span className="font-mono font-semibold">{daysUntil(nextExam.date)}</span> วัน
-        </Link>
+    <div className="flex items-center gap-2.5 text-xs font-medium">
+      {pathname !== "/" && hydrated && (
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link
+            href="/planner"
+            className="inline-flex items-center gap-1.5 rounded-full border border-terracotta/25 bg-terracotta-tint px-2.5 py-1 text-terracotta-deep transition-colors hover:border-terracotta/50"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
+            <span className="font-mono font-semibold">{totalHours}</span> ชม./สัปดาห์
+          </Link>
+          <Link
+            href="/table"
+            className="inline-flex items-center gap-1.5 rounded-full border border-sage/25 bg-sage-tint px-2.5 py-1 text-sage-deep transition-colors hover:border-sage/50"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-sage" />
+            อ่านจบ <span className="font-mono font-semibold">{doneChapters}/{allChapters.length}</span> บท
+          </Link>
+          {nextExam && (
+            <Link
+              href="/exam"
+              className="inline-flex items-center gap-1.5 rounded-full border border-mustard/30 bg-mustard-tint px-2.5 py-1 text-mustard-deep transition-colors hover:border-mustard/60"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-mustard" />
+              สอบถัดไป <span className="font-mono font-semibold">{daysUntil(nextExam.date)}</span> วัน
+            </Link>
+          )}
+          {syncStatus === "saving" && (
+            <span className="inline-flex items-center gap-1 text-ink-muted" title="กำลังบันทึกลงฐานข้อมูล">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            </span>
+          )}
+          {syncStatus === "saved" && (
+            <span className="inline-flex items-center gap-1 text-sage-deep" title="บันทึกข้อมูลลงฐานข้อมูลแล้ว">
+              <Check className="h-3.5 w-3.5" />
+            </span>
+          )}
+          {syncStatus === "error" && (
+            <span className="inline-flex items-center gap-1 text-slate-deep" title="ยังไม่ได้ซิงค์ฐานข้อมูล">
+              <CloudAlert className="h-3.5 w-3.5" />
+            </span>
+          )}
+        </div>
       )}
+
+      <div className="flex items-center gap-2">
+        <span className="hidden items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-xs font-semibold text-ink sm:inline-flex">
+          <User className="h-3.5 w-3.5 text-terracotta" />
+          <span className="max-w-28 truncate">{session.user.name || session.user.email}</span>
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => signOut({ callbackUrl: "/" })}
+          title="ออกจากระบบ"
+          className="h-8 px-2.5 text-xs"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">ออกจากระบบ</span>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,30 +1,141 @@
-import { pgTable, text, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  boolean,
+  integer,
+  jsonb,
+  primaryKey,
+} from "drizzle-orm/pg-core";
+import type { SubjectColor } from "@/lib/colors";
 
 /**
- * ตัวอย่าง Schema เริ่มต้นสำหรับ Supabase / PostgreSQL ผ่าน Drizzle ORM
- * คุณสามารถเพิ่ม/แก้ไขตารางข้อมูลได้ตามฟีเจอร์ของเว็บที่ต้องการสร้างในภายหลัง
+ * Users & Authentication Tables (NextAuth / Auth.js + Credentials)
  */
-
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name"),
   email: text("email").notNull().unique(),
+  passwordHash: text("password_hash"),
+  emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const items = pgTable("items", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  isCompleted: boolean("is_completed").default(false).notNull(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+export const accounts = pgTable(
+  "accounts",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (account) => [
+    primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+  ]
+);
+
+export const sessions = pgTable("sessions", {
+  sessionToken: text("session_token").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
 });
+
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
+);
+
+/**
+ * StudyTable Domain Tables (Subjects, Chapters, StudyBlocks, Exams)
+ */
+export const subjects = pgTable(
+  "subjects",
+  {
+    id: text("id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    color: text("color").$type<SubjectColor>().notNull(),
+    position: integer("position").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+);
+
+export const chapters = pgTable(
+  "chapters",
+  {
+    id: text("id").notNull(),
+    subjectId: text("subject_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    done: boolean("done").default(false).notNull(),
+    position: integer("position").default(0).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+);
+
+export const studyBlocks = pgTable(
+  "study_blocks",
+  {
+    id: text("id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").notNull(),
+    day: integer("day").notNull(),
+    startHour: integer("start_hour").notNull(),
+    duration: integer("duration").notNull(),
+    topic: text("topic").default("").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+);
+
+export const exams = pgTable(
+  "exams",
+  {
+    id: text("id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subjectId: text("subject_id").notNull(),
+    title: text("title").notNull(),
+    date: text("date").notNull(),
+    time: text("time").default("").notNull(),
+    chapterIds: jsonb("chapter_ids").$type<string[]>().default([]).notNull(),
+    extraTopics: jsonb("extra_topics").$type<string[]>().default([]).notNull(),
+    notes: text("notes").default("").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+);
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type Item = typeof items.$inferSelect;
-export type NewItem = typeof items.$inferInsert;
+export type DbSubject = typeof subjects.$inferSelect;
+export type DbChapter = typeof chapters.$inferSelect;
+export type DbStudyBlock = typeof studyBlocks.$inferSelect;
+export type DbExam = typeof exams.$inferSelect;

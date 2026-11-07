@@ -3,7 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans_Thai, Noto_Serif_Thai } from "next/font/go
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { StudyStoreProvider } from "@/hooks/use-study-store";
+import { Providers } from "@/components/Providers";
 
 const ibmSansThai = IBM_Plex_Sans_Thai({
   subsets: ["thai", "latin"],
@@ -43,11 +43,11 @@ export default function RootLayout({
       className={`${ibmSansThai.variable} ${notoSerifThai.variable} ${ibmMono.variable} scroll-smooth`}
     >
       <body className="flex min-h-screen flex-col selection:bg-terracotta-tint selection:text-terracotta-deep">
-        <StudyStoreProvider>
+        <Providers>
           <Navbar />
           <div className="flex-1">{children}</div>
           <Footer />
-        </StudyStoreProvider>
+        </Providers>
       </body>
     </html>
   );
