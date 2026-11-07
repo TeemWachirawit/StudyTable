@@ -1,127 +1,172 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Code2, Layers, Database, Sparkles, FolderTree, Rocket } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CalendarDays, BookOpenCheck, Hourglass } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { PlannerPreview } from "@/components/landing/PlannerPreview";
+import { TablePreview } from "@/components/landing/TablePreview";
+import { ExamPreview } from "@/components/landing/ExamPreview";
 
-export default function HomePage() {
+const features = [
+  {
+    id: "planner",
+    href: "/planner",
+    icon: CalendarDays,
+    tag: "Planner",
+    title: "จัดตารางอ่านหนังสือแบบรายสัปดาห์",
+    body: "ตารางวัน × เวลาที่คุ้นตาเหมือน Excel หรือตารางเรียน ลากช่วงเวลา ใส่วิชาและหัวข้อที่จะอ่าน แยกสีตามวิชาให้เห็นภาพรวมทั้งสัปดาห์ในแวบเดียว",
+    points: ["มุมมองจันทร์–อาทิตย์ แบ่งช่วงรายชั่วโมง", "แยกสีตามรายวิชา", "เห็นจำนวนชั่วโมงที่วางแผนไว้ต่อสัปดาห์"],
+    preview: <PlannerPreview />,
+  },
+  {
+    id: "table",
+    href: "/table",
+    icon: BookOpenCheck,
+    tag: "Table",
+    title: "โต๊ะเรียนที่จำได้ว่าคุณอ่านถึงไหนแล้ว",
+    body: "บันทึกความคืบหน้าทีละวิชา ทีละบท ติ๊กบทที่อ่านจบแล้ว ระบบคำนวณเปอร์เซ็นต์ให้อัตโนมัติ ไม่ต้องจำเองว่าเก็บเนื้อหาไปถึงไหน",
+    points: ["รายการวิชาและบทเรียนของคุณเอง", "แถบความคืบหน้าต่อวิชา", "รู้ทันทีว่าบทไหนยังค้างอยู่"],
+    preview: <TablePreview />,
+  },
+  {
+    id: "exam",
+    href: "/exam",
+    icon: Hourglass,
+    tag: "Exam",
+    title: "นับถอยหลังวันสอบ พร้อมขอบเขตเนื้อหา",
+    body: "ใส่วันสอบของแต่ละวิชา แล้วดูว่าเหลืออีกกี่วัน พร้อมรายการหัวข้อที่ออกสอบ จะได้วางแผนอ่านให้ทันก่อนเดดไลน์",
+    points: ["นับวันที่เหลือก่อนสอบอัตโนมัติ", "ระบุหัวข้อที่ออกสอบแต่ละวิชา", "เน้นสีวิชาที่ใกล้สอบ"],
+    preview: <ExamPreview />,
+  },
+];
+
+const steps = [
+  { n: "01", title: "วางแผน", body: "ลงช่วงเวลาอ่านหนังสือในตารางรายสัปดาห์ของ Planner" },
+  { n: "02", title: "อ่านและบันทึก", body: "อ่านจบบทไหน ติ๊กไว้ที่ Table ความคืบหน้าอัปเดตทันที" },
+  { n: "03", title: "พร้อมสอบ", body: "ดูวันที่เหลือและหัวข้อที่ออกสอบใน Exam แล้วเก็บส่วนที่ขาด" },
+];
+
+export default function LandingPage() {
   return (
-    <main className="min-h-[calc(100vh-4rem)]">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-white to-zinc-50 border-b border-zinc-200/70">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs sm:text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
-            <span>โครงสร้างโปรเจกต์พร้อมสำหรับการสร้างเนื้อหาแล้ว</span>
+    <main>
+      {/* ───────── Hero ───────── */}
+      <section className="bg-ruled border-b border-line">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pt-16 pb-20 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:pt-24 lg:pb-28">
+          <div>
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line-strong bg-sheet px-3 py-1 text-xs font-medium text-ink-soft">
+              <span className="h-1.5 w-1.5 rounded-full bg-terracotta" />
+              ผู้ช่วยจัดตารางอ่านหนังสือสำหรับนักเรียน
+            </p>
+            <h1 className="font-display text-4xl leading-[1.25] font-bold tracking-tight text-ink sm:text-5xl sm:leading-[1.2]">
+              อ่านหนังสืออย่างมีแผน
+              <br />
+              <span className="text-terracotta">บนโต๊ะเรียนของคุณเอง</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft">
+              StudyTable รวมตารางอ่านหนังสือรายสัปดาห์ บันทึกความคืบหน้าทีละบท และนับถอยหลังวันสอบไว้ในที่เดียว
+              รู้เสมอว่าวันนี้ต้องอ่านอะไร อ่านไปถึงไหนแล้ว และเหลือเวลาอีกเท่าไร
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/planner" className={buttonVariants({ size: "lg" })}>
+                เริ่มจัดตารางอ่านหนังสือ
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a href="#features" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                ดูฟีเจอร์ทั้งหมด
+              </a>
+            </div>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900 leading-tight">
-            เริ่มต้นสร้างเว็บไซต์ของคุณ <br className="hidden sm:inline" />
-            <span className="text-blue-600">เตรียมไฟล์และโครงสร้างพร้อมแล้ว</span>
-          </h1>
-
-          <p className="mt-5 max-w-2xl mx-auto text-base sm:text-lg text-zinc-600 leading-relaxed">
-            ไฟล์ตั้งต้นทั้งหมดได้รับการจัดวางอย่างเป็นระเบียบตามมาตรฐาน Modern Full-Stack (Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, Drizzle ORM) พร้อมให้คุณใส่เนื้อหาและฟีเจอร์ได้ทันที
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Button size="lg" className="shadow-sm">
-              <Rocket className="h-4 w-4 mr-2" /> เริ่มเขียนเนื้อหา
-            </Button>
-            <Button variant="outline" size="lg">
-              <Code2 className="h-4 w-4 mr-2" /> ดูโครงสร้างโฟลเดอร์
-            </Button>
-          </div>
+          <PlannerPreview className="lg:rotate-[0.6deg]" />
         </div>
       </section>
 
-      {/* Overview Cards */}
-      <section id="features" className="py-16 mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            ไฟล์และส่วนประกอบที่จัดเตรียมไว้ให้
+      {/* ───────── Three pillars summary ───────── */}
+      <section aria-label="สรุปฟีเจอร์" className="border-b border-line bg-sheet">
+        <div className="mx-auto grid max-w-6xl divide-y divide-line px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0">
+          {features.map((f) => (
+            <a key={f.id} href={`#${f.id}`} className="group flex items-start gap-4 py-7 md:px-7 md:first:pl-0 md:last:pr-0">
+              <f.icon className="mt-0.5 h-6 w-6 shrink-0 text-terracotta" strokeWidth={1.75} />
+              <div>
+                <p className="font-semibold text-ink group-hover:text-terracotta">{f.tag}</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{f.points[0]}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* ───────── Feature deep dives ───────── */}
+      <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 sm:px-8 lg:py-28">
+        <div className="mb-16 max-w-2xl">
+          <p className="font-mono text-xs font-medium tracking-widest text-terracotta uppercase">Features</p>
+          <h2 className="mt-3 font-display text-3xl leading-snug font-bold sm:text-4xl">
+            สามหน้าที่ทำงานร่วมกัน ตั้งแต่วางแผนจนถึงวันสอบ
           </h2>
-          <p className="mt-2 text-zinc-600 text-sm sm:text-base">
-            โครงสร้างพร้อมใช้งาน รองรับทั้งหน้า UI, คอมโพเนนต์ และการเชื่อมต่อฐานข้อมูล
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-2">
-                <Layers className="h-5 w-5" />
+        <div className="space-y-24 lg:space-y-32">
+          {features.map((f, i) => (
+            <article
+              key={f.id}
+              id={f.id}
+              className="grid scroll-mt-24 items-center gap-10 lg:grid-cols-2 lg:gap-16"
+            >
+              <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
+                <span className="inline-flex items-center gap-2 font-mono text-sm font-medium text-ink-muted">
+                  <f.icon className="h-4 w-4 text-terracotta" />
+                  {f.tag}
+                </span>
+                <h3 className="mt-3 font-display text-2xl leading-snug font-bold sm:text-3xl">{f.title}</h3>
+                <p className="mt-4 leading-relaxed text-ink-soft">{f.body}</p>
+                <ul className="mt-6 space-y-2.5">
+                  {f.points.map((p) => (
+                    <li key={p} className="flex items-start gap-3 text-ink">
+                      <span className="mt-2.5 h-px w-4 shrink-0 bg-terracotta" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={f.href}
+                  className="mt-8 inline-flex items-center gap-1.5 font-semibold text-terracotta hover:text-terracotta-deep"
+                >
+                  ไปที่หน้า {f.tag}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-              <CardTitle>Next.js 15 & React</CardTitle>
-              <CardDescription>
-                โครงสร้าง App Router รองรับ Server Components, SEO Metadata และ Routing อัตโนมัติ
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-zinc-500 font-mono bg-zinc-50 p-3 rounded-lg border border-zinc-100">
-              src/app/page.tsx <br />
-              src/app/layout.tsx
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">
-                <Code2 className="h-5 w-5" />
-              </div>
-              <CardTitle>Tailwind & UI Components</CardTitle>
-              <CardDescription>
-                คอมโพเนนต์พื้นฐานแบบ shadcn/ui พร้อมใช้งาน (Button, Card, Input) และ Tailwind CSS
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-zinc-500 font-mono bg-zinc-50 p-3 rounded-lg border border-zinc-100">
-              src/components/ui/* <br />
-              src/lib/utils.ts
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="h-10 w-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mb-2">
-                <Database className="h-5 w-5" />
-              </div>
-              <CardTitle>Database & Schema</CardTitle>
-              <CardDescription>
-                Drizzle ORM เชื่อมต่อกับ PostgreSQL / Supabase พร้อมตัวอย่าง Schema พื้นฐาน
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-zinc-500 font-mono bg-zinc-50 p-3 rounded-lg border border-zinc-100">
-              src/db/schema.ts <br />
-              src/db/index.ts
-            </CardContent>
-          </Card>
+              <div className={i % 2 === 1 ? "lg:order-1" : undefined}>{f.preview}</div>
+            </article>
+          ))}
         </div>
       </section>
 
-      {/* Directory Structure Guide */}
-      <section className="py-12 bg-white border-t border-zinc-200/70">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="flex items-center gap-2 mb-6 text-zinc-900 font-bold text-xl">
-            <FolderTree className="h-5 w-5 text-blue-600" />
-            <span>แผนผังไฟล์ในโปรเจกต์ (Project Structure)</span>
-          </div>
-
-          <div className="bg-zinc-950 text-zinc-200 rounded-xl p-5 text-xs sm:text-sm font-mono overflow-x-auto shadow-inner leading-relaxed">
-            <div className="text-zinc-500">// แผนผังโฟลเดอร์สำหรับเริ่มต้นพัฒนา</div>
-            <div className="text-emerald-400">src/</div>
-            <div className="pl-4">├── <span className="text-blue-400">app/</span>            <span className="text-zinc-500"># หน้าเว็บและ Layout (App Router)</span></div>
-            <div className="pl-8">├── layout.tsx     <span className="text-zinc-500"># Root layout (หัวเว็บ, ท้ายเว็บ, ฟอนต์)</span></div>
-            <div className="pl-8">├── page.tsx       <span className="text-zinc-500"># หน้าแรก (Home Page)</span></div>
-            <div className="pl-8">└── globals.css    <span className="text-zinc-500"># สไตล์และ Tailwind CSS</span></div>
-            <div className="pl-4">├── <span className="text-blue-400">components/</span>     <span className="text-zinc-500"># คอมโพเนนต์ UI</span></div>
-            <div className="pl-8">├── ui/            <span className="text-zinc-500"># ปุ่ม, การ์ด, อินพุต ฯลฯ</span></div>
-            <div className="pl-8">├── Navbar.tsx     <span className="text-zinc-500"># แถบเมนูด้านบน</span></div>
-            <div className="pl-8">└── Footer.tsx     <span className="text-zinc-500"># แถบด้านล่าง</span></div>
-            <div className="pl-4">├── <span className="text-blue-400">db/</span>             <span className="text-zinc-500"># การตั้งค่าฐานข้อมูล (Drizzle ORM)</span></div>
-            <div className="pl-8">├── schema.ts      <span className="text-zinc-500"># ตารางข้อมูล (PostgreSQL/Supabase)</span></div>
-            <div className="pl-8">└── index.ts       <span className="text-zinc-500"># ตัวเชื่อมต่อฐานข้อมูล</span></div>
-            <div className="pl-4">├── <span className="text-blue-400">hooks/</span>          <span className="text-zinc-500"># Custom React Hooks</span></div>
-            <div className="pl-4">├── <span className="text-blue-400">lib/</span>            <span className="text-zinc-500"># ฟังก์ชัน Utility (cn, helpers)</span></div>
-            <div className="pl-4">└── <span className="text-blue-400">types/</span>          <span className="text-zinc-500"># TypeScript Types/Interfaces</span></div>
-          </div>
+      {/* ───────── How it works ───────── */}
+      <section className="border-y border-line bg-paper-deep">
+        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
+          <h2 className="font-display text-3xl font-bold">ใช้งานง่ายใน 3 ขั้นตอน</h2>
+          <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
+            {steps.map((s) => (
+              <li key={s.n} className="border-t-2 border-ink pt-5">
+                <span className="font-mono text-sm text-ink-muted">{s.n}</span>
+                <h3 className="mt-2 text-xl font-bold">{s.title}</h3>
+                <p className="mt-2 leading-relaxed text-ink-soft">{s.body}</p>
+              </li>
+            ))}
+          </ol>
         </div>
+      </section>
+
+      {/* ───────── Closing CTA ───────── */}
+      <section className="mx-auto max-w-6xl px-5 py-24 text-center sm:px-8">
+        <h2 className="mx-auto max-w-2xl font-display text-3xl leading-snug font-bold sm:text-4xl">
+          จัดโต๊ะให้พร้อม แล้วเริ่มอ่านสัปดาห์นี้เลย
+        </h2>
+        <p className="mx-auto mt-4 max-w-lg text-ink-soft">
+          เริ่มจากลงตารางอ่านหนังสือสัปดาห์แรก ใช้เวลาไม่ถึง 5 นาที
+        </p>
+        <Link href="/planner" className={buttonVariants({ size: "lg", className: "mt-8" })}>
+          เริ่มจัดตารางอ่านหนังสือ
+          <ArrowRight className="h-4 w-4" />
+        </Link>
       </section>
     </main>
   );

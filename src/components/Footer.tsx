@@ -1,30 +1,21 @@
 import Link from "next/link";
+import { Logo } from "./Navbar";
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="border-t border-zinc-200 bg-zinc-50 py-10 dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-            <span>© {currentYear} WebStarter. All rights reserved.</span>
-          </div>
-
-          <div className="flex items-center gap-6 text-sm text-zinc-500 dark:text-zinc-400">
-            <Link href="#" className="hover:text-zinc-800 dark:hover:text-zinc-200">
-              ข้อกำหนดการใช้งาน
-            </Link>
-            <Link href="#" className="hover:text-zinc-800 dark:hover:text-zinc-200">
-              นโยบายความเป็นส่วนตัว
-            </Link>
-            <Link href="#" className="hover:text-zinc-800 dark:hover:text-zinc-200">
-              ช่วยเหลือ
-            </Link>
-          </div>
+    <footer className="border-t border-line bg-paper-deep">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <Logo />
+          <p className="text-sm text-ink-muted">โต๊ะอ่านหนังสือออนไลน์ สำหรับคนที่อยากอ่านอย่างมีแผน</p>
         </div>
+        <nav aria-label="ลิงก์ท้ายเว็บ" className="flex gap-6 text-sm text-ink-soft">
+          <Link href="/planner" className="hover:text-ink">Planner</Link>
+          <Link href="/table" className="hover:text-ink">Table</Link>
+          <Link href="/exam" className="hover:text-ink">Exam</Link>
+        </nav>
+        <p className="text-xs text-ink-muted">© {new Date().getFullYear()} StudyTable</p>
       </div>
     </footer>
   );
 }
-
