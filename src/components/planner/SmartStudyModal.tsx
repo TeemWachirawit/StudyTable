@@ -311,3 +311,4 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
     </Modal>
   );
 }
+
