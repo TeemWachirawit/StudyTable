@@ -26,6 +26,7 @@ export function StudyDesk() {
   const header = (
     <PageHeader
       eyebrow="Table"
+      tone="mint"
       title="โต๊ะเรียนของฉัน"
       description="บันทึกว่าแต่ละวิชาอ่านไปถึงบทไหนแล้ว ติ๊กบทที่อ่านจบ ระบบคำนวณความคืบหน้าให้อัตโนมัติ"
       actions={
@@ -53,23 +54,38 @@ export function StudyDesk() {
 
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {state.subjects.length > 0 && (
-          <dl className="mb-8 grid grid-cols-3 divide-x divide-line rounded-xl border border-line-strong bg-sheet">
-            <Stat label="ความคืบหน้ารวม" value={`${totals.pct}%`} />
-            <Stat label="บทที่อ่านจบ" value={`${totals.done}/${totals.total}`} />
-            <Stat label="วิชาบนโต๊ะ" value={String(state.subjects.length)} />
+          <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Stat
+              label="ความคืบหน้ารวม"
+              value={`${totals.pct}%`}
+              badge="Progress"
+              toneClass="border-terracotta/25 bg-terracotta-tint text-terracotta-deep"
+            />
+            <Stat
+              label="บทที่อ่านจบแล้ว"
+              value={`${totals.done}/${totals.total}`}
+              badge="Chapters"
+              toneClass="border-sage/25 bg-sage-tint text-sage-deep"
+            />
+            <Stat
+              label="วิชาบนโต๊ะเรียน"
+              value={String(state.subjects.length)}
+              badge="Subjects"
+              toneClass="border-mustard/35 bg-mustard-tint text-mustard-deep"
+            />
           </dl>
         )}
 
         {state.subjects.length === 0 ? (
-          <div className="mx-auto max-w-md py-16 text-center">
-            <p className="font-display text-xl font-bold">โต๊ะยังว่างอยู่</p>
+          <div className="mx-auto max-w-md rounded-2xl border border-dashed border-line-strong bg-sheet px-6 py-16 text-center">
+            <p className="font-display text-xl font-bold text-ink">โต๊ะยังว่างอยู่</p>
             <p className="mt-2 text-ink-soft">เริ่มจากเพิ่มวิชาที่ต้องอ่าน แล้วใส่รายการบทเรียนของแต่ละวิชา</p>
             <Button className="mt-6" onClick={() => setEditing("new")}>
               <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid items-start gap-6 lg:grid-cols-2">
             {state.subjects.map((s) => (
               <SubjectPanel key={s.id} subject={s} onEdit={() => setEditing(s)} />
             ))}
@@ -99,11 +115,26 @@ export function StudyDesk() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  badge,
+  toneClass,
+}: {
+  label: string;
+  value: string;
+  badge: string;
+  toneClass: string;
+}) {
   return (
-    <div className="px-4 py-4 sm:px-6">
-      <dt className="text-xs text-ink-muted sm:text-sm">{label}</dt>
-      <dd className="mt-1 font-mono text-2xl font-semibold sm:text-3xl">{value}</dd>
+    <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+      <div>
+        <dt className="text-xs font-medium text-ink-muted sm:text-sm">{label}</dt>
+        <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">{value}</dd>
+      </div>
+      <span className={cn("rounded-full border px-2.5 py-1 font-mono text-[11px] font-semibold", toneClass)}>
+        {badge}
+      </span>
     </div>
   );
 }
@@ -111,6 +142,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => void }) {
   const { state, dispatch } = useStudyStore();
   const [newChapter, setNewChapter] = useState("");
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
   const color = SUBJECT_COLORS[subject.color];
   const { done, total, pct } = subjectProgress(subject);
 
@@ -126,34 +159,50 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
     setNewChapter("");
   };
 
+  const commitChapterEdit = (chapterId: string) => {
+    const trimmed = editingTitle.trim();
+    if (trimmed) {
+      dispatch({ type: "updateChapter", subjectId: subject.id, chapterId, title: trimmed });
+    }
+    setEditingChapterId(null);
+  };
+
   return (
     <section
       aria-labelledby={`subject-${subject.id}`}
-      className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-sheet"
+      className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-sheet shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]"
     >
       <div className={cn("h-1.5", color.solid)} />
       <div className="px-5 pt-4 pb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 id={`subject-${subject.id}`} className="font-display text-xl font-bold">
-              {subject.name}
-            </h2>
-            <p className="mt-0.5 text-xs text-ink-muted">
-              วางแผนไว้ {plannedHours} ชม./สัปดาห์
+            <div className="flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 rounded-full", color.solid)} aria-hidden="true" />
+              <h2 id={`subject-${subject.id}`} className="font-display text-xl font-bold text-ink">
+                {subject.name}
+              </h2>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+              <Link
+                href="/planner"
+                className="rounded-md bg-paper-deep px-2 py-0.5 font-medium text-ink-soft transition-colors hover:text-ink"
+              >
+                วางแผนไว้ {plannedHours} ชม./สัปดาห์
+              </Link>
               {nextExam && (
-                <>
-                  {" · "}
-                  <Link href="/exam" className="text-terracotta hover:underline">
-                    {nextExam.title}อีก {daysUntil(nextExam.date)} วัน
-                  </Link>
-                </>
+                <Link
+                  href="/exam"
+                  className="rounded-md border border-mustard/30 bg-mustard-tint px-2 py-0.5 font-medium text-mustard-deep hover:underline"
+                >
+                  {nextExam.title} · อีก {daysUntil(nextExam.date)} วัน
+                </Link>
               )}
-            </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onEdit}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-paper-deep hover:text-ink"
+            className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
             aria-label={`แก้ไขวิชา ${subject.name}`}
           >
             <Pencil className="h-4 w-4" />
@@ -180,44 +229,84 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
         </div>
       </div>
 
-      <ul className="flex-1 border-t border-line">
+      <ul className="max-h-80 overflow-y-auto border-t border-line">
         {subject.chapters.length === 0 && (
           <li className="px-5 py-4 text-sm text-ink-muted">ยังไม่มีบทเรียน เพิ่มบทแรกด้านล่างได้เลย</li>
         )}
         {subject.chapters.map((c, i) => (
-          <li key={c.id} className="group flex items-center gap-3 border-b border-line/70 px-5 py-2.5 last:border-b-0">
-            <button
-              type="button"
-              role="checkbox"
-              aria-checked={c.done}
-              onClick={() => dispatch({ type: "toggleChapter", subjectId: subject.id, chapterId: c.id })}
-              className="flex flex-1 items-center gap-3 text-left text-sm"
-            >
-              <span
-                className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-                  c.done ? "border-sage bg-sage text-sheet" : "border-line-strong bg-sheet group-hover:border-ink-muted"
-                )}
+          <li
+            key={c.id}
+            className="group flex items-center gap-2 border-b border-line/70 px-5 py-2.5 transition-colors last:border-b-0 hover:bg-paper"
+          >
+            {editingChapterId === c.id ? (
+              <form
+                className="flex flex-1 items-center gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  commitChapterEdit(c.id);
+                }}
               >
-                {c.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-              </span>
-              <span className="font-mono text-xs text-ink-muted">{String(i + 1).padStart(2, "0")}</span>
-              <span className={c.done ? "text-ink-muted line-through decoration-line-strong" : "text-ink"}>{c.title}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })}
-              className="rounded p-1 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-terracotta focus-visible:opacity-100"
-              aria-label={`ลบบท ${c.title}`}
-            >
-              <X className="h-4 w-4" />
-            </button>
+                <input
+                  className={cn(inputClass, "h-8 text-sm")}
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  onBlur={() => commitChapterEdit(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setEditingChapterId(null);
+                  }}
+                  autoFocus
+                  aria-label="แก้ไขชื่อบทเรียน"
+                />
+              </form>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={c.done}
+                  onClick={() => dispatch({ type: "toggleChapter", subjectId: subject.id, chapterId: c.id })}
+                  className="flex flex-1 items-center gap-3 rounded-md py-0.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+                >
+                  <span
+                    className={cn(
+                      "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                      c.done ? "border-sage bg-sage text-sheet" : "border-line-strong bg-sheet group-hover:border-ink-muted"
+                    )}
+                  >
+                    {c.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                  </span>
+                  <span className="font-mono text-xs text-ink-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <span className={c.done ? "text-ink-muted line-through decoration-line-strong" : "text-ink"}>
+                    {c.title}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingChapterId(c.id);
+                    setEditingTitle(c.title);
+                  }}
+                  className="rounded p-1 text-ink-muted opacity-60 transition-opacity hover:bg-paper-deep hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  aria-label={`เปลี่ยนชื่อบท ${c.title}`}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })}
+                  className="rounded p-1 text-ink-muted opacity-60 transition-opacity hover:bg-slate-tint hover:text-slate-deep focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  aria-label={`ลบบท ${c.title}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
 
       <form
-        className="flex gap-2 border-t border-line bg-paper/60 px-5 py-3"
+        className="flex gap-2 border-t border-line bg-paper px-5 py-3"
         onSubmit={(e) => {
           e.preventDefault();
           addChapter();
@@ -237,4 +326,3 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
     </section>
   );
 }
-

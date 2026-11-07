@@ -1,37 +1,36 @@
 export const SUBJECT_COLORS = {
   terracotta: {
-    label: "ส้มอิฐ",
-    block: "bg-terracotta-tint text-terracotta-deep border-terracotta/40",
+    label: "ฟ้าคราม (Sky)",
+    block: "bg-terracotta-tint text-terracotta-deep border-terracotta/30",
     solid: "bg-terracotta",
     text: "text-terracotta-deep",
   },
   sage: {
-    label: "เขียวเสจ",
-    block: "bg-sage-tint text-sage border-sage/40",
+    label: "เขียวมินต์ (Mint)",
+    block: "bg-sage-tint text-sage-deep border-sage/30",
     solid: "bg-sage",
-    text: "text-sage",
+    text: "text-sage-deep",
   },
   mustard: {
-    label: "มัสตาร์ด",
-    block: "bg-mustard-tint text-[#7a5a17] border-mustard/50",
+    label: "เหลืองแอมเบอร์ (Amber)",
+    block: "bg-mustard-tint text-mustard-deep border-mustard/35",
     solid: "bg-mustard",
-    text: "text-[#7a5a17]",
+    text: "text-mustard-deep",
   },
   slate: {
-    label: "ฟ้าเทา",
-    block: "bg-slate-tint text-slate border-slate/40",
+    label: "ชมพูคอรัล (Coral)",
+    block: "bg-slate-tint text-slate-deep border-slate/30",
     solid: "bg-slate",
-    text: "text-slate",
+    text: "text-slate-deep",
   },
   plum: {
-    label: "ม่วงพลัม",
-    block: "bg-plum-tint text-plum border-plum/40",
+    label: "ม่วงลาเวนเดอร์ (Violet)",
+    block: "bg-plum-tint text-plum-deep border-plum/30",
     solid: "bg-plum",
-    text: "text-plum",
+    text: "text-plum-deep",
   },
 } as const;
 
 export type SubjectColor = keyof typeof SUBJECT_COLORS;
 
 export const COLOR_KEYS = Object.keys(SUBJECT_COLORS) as SubjectColor[];
-

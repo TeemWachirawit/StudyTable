@@ -1,11 +1,27 @@
 import { cn } from "@/lib/utils";
 
-/** Shared subject palette used across landing previews. */
+/** Shared subject palette used across landing previews — 3 primary soft productivity colors + coral. */
 export const subjects = {
-  math: { name: "คณิตศาสตร์", block: "bg-terracotta-tint text-terracotta-deep border-terracotta/40", bar: "bg-terracotta" },
-  physics: { name: "ฟิสิกส์", block: "bg-slate-tint text-slate border-slate/40", bar: "bg-slate" },
-  bio: { name: "ชีววิทยา", block: "bg-sage-tint text-sage border-sage/40", bar: "bg-sage" },
-  english: { name: "ภาษาอังกฤษ", block: "bg-mustard-tint text-[#7a5a17] border-mustard/50", bar: "bg-mustard" },
+  math: {
+    name: "คณิตศาสตร์",
+    block: "bg-terracotta-tint text-terracotta-deep border-terracotta/30",
+    bar: "bg-terracotta",
+  },
+  bio: {
+    name: "ชีววิทยา",
+    block: "bg-sage-tint text-sage-deep border-sage/30",
+    bar: "bg-sage",
+  },
+  english: {
+    name: "ภาษาอังกฤษ",
+    block: "bg-mustard-tint text-mustard-deep border-mustard/35",
+    bar: "bg-mustard",
+  },
+  physics: {
+    name: "ฟิสิกส์",
+    block: "bg-slate-tint text-slate-deep border-slate/30",
+    bar: "bg-slate",
+  },
 } as const;
 
 type SubjectKey = keyof typeof subjects;
@@ -31,15 +47,20 @@ export function PlannerPreview({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-line-strong bg-sheet shadow-[0_1px_0_var(--color-line),0_18px_40px_-24px_rgba(31,27,22,0.35)]",
+        "overflow-hidden rounded-xl border border-line-strong bg-sheet shadow-[0_1px_0_var(--color-line),0_20px_45px_-24px_rgba(15,23,42,0.12)]",
         className
       )}
       aria-label="ตัวอย่างตารางอ่านหนังสือรายสัปดาห์"
       role="img"
     >
-      <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-        <span className="text-sm font-semibold">สัปดาห์ที่ 3 · พ.ย.</span>
-        <span className="font-mono text-xs text-ink-muted">14 ชม. วางแผนไว้</span>
+      <div className="flex items-center justify-between border-b border-line bg-sheet px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-terracotta" />
+          <span className="text-sm font-semibold text-ink">สัปดาห์ที่ 3 · พ.ย.</span>
+        </div>
+        <span className="rounded-full bg-terracotta-tint px-2.5 py-0.5 font-mono text-xs font-medium text-terracotta-deep">
+          14 ชม. วางแผนไว้
+        </span>
       </div>
 
       <div
@@ -50,11 +71,11 @@ export function PlannerPreview({ className }: { className?: string }) {
         }}
       >
         {/* header row */}
-        <div className="border-b border-r border-line bg-paper-deep" />
+        <div className="border-b border-r border-line bg-paper" />
         {days.map((d) => (
           <div
             key={d}
-            className="flex items-center justify-center border-b border-r border-line bg-paper-deep font-semibold text-ink-soft last:border-r-0"
+            className="flex items-center justify-center border-b border-r border-line bg-paper font-semibold text-ink-soft last:border-r-0"
           >
             {d}
           </div>
@@ -64,7 +85,7 @@ export function PlannerPreview({ className }: { className?: string }) {
         {hours.map((h, r) => (
           <div key={h} className="contents">
             <div
-              className="border-r border-b border-line pr-1.5 pt-1 text-right font-mono text-[10px] text-ink-muted"
+              className="border-r border-b border-line bg-sheet pr-1.5 pt-1 text-right font-mono text-[10px] text-ink-muted"
               style={{ gridColumn: 1, gridRow: r + 2 }}
             >
               {h}
@@ -72,7 +93,7 @@ export function PlannerPreview({ className }: { className?: string }) {
             {days.map((_, c) => (
               <div
                 key={c}
-                className="border-r border-b border-line/70 last:border-r-0"
+                className="border-r border-b border-line/70 bg-sheet last:border-r-0"
                 style={{ gridColumn: c + 2, gridRow: r + 2 }}
               />
             ))}
@@ -90,11 +111,10 @@ export function PlannerPreview({ className }: { className?: string }) {
             style={{ gridColumn: b.day + 1, gridRow: `${b.start + 2} / span ${b.span}` }}
           >
             <span className="block truncate font-semibold">{b.label}</span>
-            <span className="hidden truncate opacity-75 sm:block">{subjects[b.subject].name}</span>
+            <span className="hidden truncate opacity-80 sm:block">{subjects[b.subject].name}</span>
           </div>
         ))}
       </div>
     </div>
   );
 }
-

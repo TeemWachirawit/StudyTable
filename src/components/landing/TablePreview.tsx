@@ -4,9 +4,9 @@ import { subjects } from "./PlannerPreview";
 
 const progress = [
   { key: "math", done: 7, total: 10 },
-  { key: "physics", done: 4, total: 9 },
   { key: "bio", done: 8, total: 8 },
-  { key: "english", done: 3, total: 6 },
+  { key: "english", done: 4, total: 6 },
+  { key: "physics", done: 4, total: 9 },
 ] as const;
 
 const chapters = [
@@ -19,7 +19,10 @@ const chapters = [
 export function TablePreview({ className }: { className?: string }) {
   return (
     <div
-      className={cn("rounded-xl border border-line-strong bg-sheet p-5", className)}
+      className={cn(
+        "rounded-xl border border-line-strong bg-sheet p-5 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.1)]",
+        className
+      )}
       role="img"
       aria-label="ตัวอย่างความคืบหน้าการอ่านแต่ละวิชา"
     >
@@ -30,7 +33,7 @@ export function TablePreview({ className }: { className?: string }) {
           return (
             <li key={p.key}>
               <div className="mb-1.5 flex items-baseline justify-between text-sm">
-                <span className="font-semibold">{s.name}</span>
+                <span className="font-semibold text-ink">{s.name}</span>
                 <span className="font-mono text-xs text-ink-muted">
                   {p.done}/{p.total} บท · {pct}%
                 </span>
@@ -66,4 +69,3 @@ export function TablePreview({ className }: { className?: string }) {
     </div>
   );
 }
-

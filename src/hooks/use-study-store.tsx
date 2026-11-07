@@ -13,6 +13,7 @@ type Action =
   | { type: "saveSubject"; id?: string; name: string; color: SubjectColor }
   | { type: "deleteSubject"; id: string }
   | { type: "addChapter"; subjectId: string; title: string }
+  | { type: "updateChapter"; subjectId: string; chapterId: string; title: string }
   | { type: "toggleChapter"; subjectId: string; chapterId: string }
   | { type: "deleteChapter"; subjectId: string; chapterId: string }
   | { type: "saveBlock"; block: StudyBlock }
@@ -60,6 +61,18 @@ function reducer(state: StudyState, action: Action): StudyState {
         subjects: state.subjects.map((s) =>
           s.id === action.subjectId
             ? { ...s, chapters: [...s.chapters, { id: uid(), title: action.title, done: false }] }
+            : s
+        ),
+      };
+    case "updateChapter":
+      return {
+        ...state,
+        subjects: state.subjects.map((s) =>
+          s.id === action.subjectId
+            ? {
+                ...s,
+                chapters: s.chapters.map((c) => (c.id === action.chapterId ? { ...c, title: action.title } : c)),
+              }
             : s
         ),
       };
@@ -135,4 +148,3 @@ export function useStudyStore(): StoreValue {
   if (!ctx) throw new Error("useStudyStore must be used inside <StudyStoreProvider>");
   return ctx;
 }
-

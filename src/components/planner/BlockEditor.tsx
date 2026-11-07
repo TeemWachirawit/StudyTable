@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Field, inputClass } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { DAYS, FIRST_HOUR, LAST_HOUR, findConflict, formatHour } from "@/lib/study";
+import { cn } from "@/lib/utils";
 import type { StudyBlock, Subject } from "@/types/study";
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, onDelete }: Props) {
   const [form, setForm] = useState<StudyBlock>(draft);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const set = <K extends keyof StudyBlock>(key: K, value: StudyBlock[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   const subject = subjects.find((s) => s.id === form.subjectId);
@@ -42,9 +44,32 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
       footer={
         <>
           {!isNew && (
-            <Button variant="ghost" onClick={() => onDelete(form.id)} className="mr-auto text-terracotta hover:text-terracotta-deep">
-              <Trash2 className="h-4 w-4" /> ลบ
-            </Button>
+            <div className="mr-auto flex items-center gap-2">
+              {confirmingDelete ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-slate hover:bg-slate-deep"
+                    onClick={() => onDelete(form.id)}
+                  >
+                    ยืนยันลบ
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                    ยกเลิก
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                >
+                  <Trash2 className="h-4 w-4" /> ลบ
+                </Button>
+              )}
+            </div>
           )}
           <Button variant="outline" onClick={onClose} className={isNew ? "ml-auto" : undefined}>
             ยกเลิก
@@ -80,19 +105,40 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
         <Field
           label="หัวข้อที่จะอ่าน"
           htmlFor="block-topic"
-          hint={subject && subject.chapters.length > 0 ? "เลือกจากบทเรียนในรายการ หรือพิมพ์เองก็ได้" : undefined}
+          hint={subject && subject.chapters.length > 0 ? "คลิกเลือกจากบทเรียนด้านล่าง หรือพิมพ์หัวข้อเอง" : undefined}
         >
           <input
             id="block-topic"
             className={inputClass}
-            list="block-topic-options"
             placeholder="เช่น บทที่ 3 · อนุพันธ์"
             value={form.topic}
             onChange={(e) => set("topic", e.target.value)}
           />
-          <datalist id="block-topic-options">
-            {subject?.chapters.map((c) => <option key={c.id} value={c.title} />)}
-          </datalist>
+          {subject && subject.chapters.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {subject.chapters.map((c) => {
+                const active = form.topic === c.title;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => set("topic", c.title)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                      active
+                        ? "border-terracotta bg-terracotta-tint text-terracotta-deep"
+                        : c.done
+                          ? "border-line bg-paper text-ink-muted hover:border-line-strong"
+                          : "border-line-strong bg-sheet text-ink-soft hover:bg-paper-deep hover:text-ink"
+                    )}
+                  >
+                    {c.done && <Check className="h-3 w-3 text-sage" strokeWidth={3} />}
+                    {c.title}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Field>
 
         <div className="grid grid-cols-3 gap-3">
@@ -136,7 +182,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg border border-terracotta/40 bg-terracotta-tint px-3 py-2 text-sm text-terracotta-deep">
+          <p role="alert" className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-sm text-slate-deep">
             {error}
           </p>
         )}
@@ -146,4 +192,3 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
     </Modal>
   );
 }
-

@@ -1,30 +1,47 @@
 @import "tailwindcss";
 
-/* StudyTable design tokens — warm "study desk" palette */
+/* StudyTable design tokens — Clean White Productivity palette with 3 distinct soft accents */
 @theme {
-  --color-paper: #f7f3ea;
-  --color-paper-deep: #efe8da;
-  --color-sheet: #fffdf8;
-  --color-line: #ded5c4;
-  --color-line-strong: #c7bca8;
-  --color-ink: #1f1b16;
-  --color-ink-soft: #5a5249;
-  --color-ink-muted: #8c8378;
-  --color-terracotta: #b5522b;
-  --color-terracotta-deep: #8f3d1e;
-  --color-terracotta-tint: #f4ddd0;
-  --color-sage: #4e6b4f;
-  --color-sage-tint: #dde6d8;
-  --color-mustard: #c89b3c;
-  --color-mustard-tint: #f3e6c4;
-  --color-slate: #4a5d73;
-  --color-slate-tint: #dbe2ea;
-  --color-plum: #7a4e6b;
-  --color-plum-tint: #ecdfe7;
+  /* Crisp white & cool neutral surfaces */
+  --color-paper: #fafbfc;
+  --color-paper-deep: #f1f4f9;
+  --color-sheet: #ffffff;
+  --color-line: #e5e9f0;
+  --color-line-strong: #d0d7e2;
 
-  --font-sans: "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
-  --font-display: "Noto Serif Thai", Georgia, serif;
-  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  /* High-contrast ink hierarchy */
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-muted: #64748b;
+
+  /* Primary Productivity Accent 1: Crisp Cobalt / Soft Sky */
+  --color-terracotta: #2563eb;
+  --color-terracotta-deep: #1d4ed8;
+  --color-terracotta-tint: #eff6ff;
+
+  /* Primary Productivity Accent 2: Fresh Mint / Soft Emerald */
+  --color-sage: #0d9488;
+  --color-sage-deep: #0f766e;
+  --color-sage-tint: #ecfdf5;
+
+  /* Primary Productivity Accent 3: Warm Amber / Soft Apricot */
+  --color-mustard: #d97706;
+  --color-mustard-deep: #92400e;
+  --color-mustard-tint: #fffbeb;
+
+  /* Supporting Subject Accent 4: Soft Rose / Coral */
+  --color-slate: #e11d48;
+  --color-slate-deep: #9f1239;
+  --color-slate-tint: #fff1f2;
+
+  /* Supporting Subject Accent 5: Soft Violet / Lavender */
+  --color-plum: #7c3aed;
+  --color-plum-deep: #5b21b6;
+  --color-plum-tint: #f5f3ff;
+
+  --font-sans: var(--font-ibm-sans), "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
+  --font-display: var(--font-noto-serif), "Noto Serif Thai", Georgia, serif;
+  --font-mono: var(--font-ibm-mono), "IBM Plex Mono", Consolas, monospace;
 }
 
 @layer base {
@@ -36,11 +53,11 @@
   }
 }
 
-/* Faint ruled-paper texture for hero backgrounds */
+/* Crisp productivity notebook grid texture on white background */
 .bg-ruled {
-  background-image: repeating-linear-gradient(to bottom,
-      transparent 0,
-      transparent 31px,
-      color-mix(in srgb, var(--color-line) 55%, transparent) 31px,
-      color-mix(in srgb, var(--color-line) 55%, transparent) 32px);
+  background-color: var(--color-sheet);
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
 }

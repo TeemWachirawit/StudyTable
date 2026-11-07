@@ -19,6 +19,7 @@ interface Props {
 export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
   const [name, setName] = useState(subject?.name ?? "");
   const [color, setColor] = useState<SubjectColor>(subject?.color ?? "terracotta");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const valid = name.trim().length > 0;
 
   const submit = () => valid && onSave(name.trim(), color);
@@ -31,15 +32,32 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
       footer={
         <>
           {onDelete && (
-            <Button
-              variant="ghost"
-              className="mr-auto text-terracotta hover:text-terracotta-deep"
-              onClick={() => {
-                if (confirm(`ลบวิชา "${subject?.name}"? ช่วงอ่านในตารางและรายการสอบของวิชานี้จะถูกลบด้วย`)) onDelete();
-              }}
-            >
-              <Trash2 className="h-4 w-4" /> ลบวิชา
-            </Button>
+            <div className="mr-auto flex items-center gap-2">
+              {confirmingDelete ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-slate hover:bg-slate-deep"
+                    onClick={onDelete}
+                  >
+                    ยืนยันลบวิชา
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                    ยกเลิก
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" /> ลบวิชา
+                </Button>
+              )}
+            </div>
           )}
           <Button variant="outline" onClick={onClose} className={onDelete ? undefined : "ml-auto"}>
             ยกเลิก
@@ -68,7 +86,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
         </Field>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-semibold">สีประจำวิชา</legend>
+          <legend className="mb-2 text-sm font-semibold text-ink">สีประจำวิชา</legend>
           <div className="flex flex-wrap gap-2">
             {COLOR_KEYS.map((key) => {
               const c = SUBJECT_COLORS[key];
@@ -80,7 +98,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
                   onClick={() => setColor(key)}
                   aria-pressed={selected}
                   className={cn(
-                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm",
+                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all",
                     c.block,
                     selected && "ring-2 ring-ink ring-offset-2 ring-offset-sheet"
                   )}
@@ -94,9 +112,13 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
             })}
           </div>
         </fieldset>
+        {confirmingDelete && (
+          <p role="alert" className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-xs text-slate-deep">
+            การลบวิชา &ldquo;{subject?.name}&rdquo; จะลบตารางอ่านและรายการสอบของวิชานี้ทั้งหมดด้วย
+          </p>
+        )}
         <button type="submit" hidden />
       </form>
     </Modal>
   );
 }
-

@@ -1,8 +1,30 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Mono, IBM_Plex_Sans_Thai, Noto_Serif_Thai } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { StudyStoreProvider } from "@/hooks/use-study-store";
+
+const ibmSansThai = IBM_Plex_Sans_Thai({
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ibm-sans",
+  display: "swap",
+});
+
+const notoSerifThai = Noto_Serif_Thai({
+  subsets: ["thai", "latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-noto-serif",
+  display: "swap",
+});
+
+const ibmMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "StudyTable — โต๊ะอ่านหนังสือออนไลน์ของคุณ",
@@ -16,15 +38,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className="scroll-smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="th"
+      className={`${ibmSansThai.variable} ${notoSerifThai.variable} ${ibmMono.variable} scroll-smooth`}
+    >
       <body className="flex min-h-screen flex-col selection:bg-terracotta-tint selection:text-terracotta-deep">
         <StudyStoreProvider>
           <Navbar />

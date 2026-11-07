@@ -21,6 +21,7 @@ interface Props {
 export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }: Props) {
   const [form, setForm] = useState<Exam>(draft);
   const [extraText, setExtraText] = useState(draft.extraTopics.join("\n"));
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const subject = subjects.find((s) => s.id === form.subjectId);
   const valid = form.title.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(form.date);
 
@@ -51,13 +52,32 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
       footer={
         <>
           {!isNew && (
-            <Button
-              variant="ghost"
-              className="mr-auto text-terracotta hover:text-terracotta-deep"
-              onClick={() => onDelete(form.id)}
-            >
-              <Trash2 className="h-4 w-4" /> ลบ
-            </Button>
+            <div className="mr-auto flex items-center gap-2">
+              {confirmingDelete ? (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-slate hover:bg-slate-deep"
+                    onClick={() => onDelete(form.id)}
+                  >
+                    ยืนยันลบ
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                    ยกเลิก
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" /> ลบ
+                </Button>
+              )}
+            </div>
           )}
           <Button variant="outline" onClick={onClose} className={isNew ? "ml-auto" : undefined}>
             ยกเลิก
@@ -121,7 +141,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-semibold">บทที่ออกสอบ</legend>
+          <legend className="mb-2 text-sm font-semibold text-ink">บทที่ออกสอบ</legend>
           {subject && subject.chapters.length > 0 ? (
             <ul className="max-h-52 overflow-y-auto rounded-lg border border-line">
               {subject.chapters.map((c) => {
@@ -133,7 +153,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
                       role="checkbox"
                       aria-checked={checked}
                       onClick={() => toggleChapter(c.id)}
-                      className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-paper"
+                      className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-terracotta"
                     >
                       <span
                         className={cn(
@@ -143,8 +163,12 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
                       >
                         {checked && <Check className="h-3 w-3" strokeWidth={3} />}
                       </span>
-                      <span className="flex-1">{c.title}</span>
-                      {c.done && <span className="text-xs text-sage">อ่านแล้ว</span>}
+                      <span className="flex-1 text-ink">{c.title}</span>
+                      {c.done && (
+                        <span className="rounded-full bg-sage-tint px-2 py-0.5 text-xs font-medium text-sage-deep">
+                          อ่านแล้ว
+                        </span>
+                      )}
                     </button>
                   </li>
                 );
@@ -153,7 +177,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
           ) : (
             <p className="rounded-lg border border-dashed border-line-strong px-3 py-3 text-sm text-ink-muted">
               วิชานี้ยังไม่มีบทเรียน{" "}
-              <Link href="/table" className="text-terracotta hover:underline">
+              <Link href="/table" className="font-medium text-terracotta hover:underline">
                 เพิ่มบทในหน้า Table
               </Link>{" "}
               หรือพิมพ์หัวข้อเองด้านล่าง
@@ -186,4 +210,3 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
     </Modal>
   );
 }
-
