@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BookPlus, Check, Plus, RotateCcw } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
-import { SUBJECT_COLORS } from "@/lib/colors";
+import { getSubjectColor } from "@/lib/colors";
 import { DAYS, DAYS_SHORT, FIRST_HOUR, LAST_HOUR, formatHour, uid, weekdayIndex } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -128,19 +128,26 @@ export function PlannerBoard() {
             รวม <span className="font-mono text-base font-semibold text-ink">{totalHours}</span> ชั่วโมง / สัปดาห์
           </p>
           <ul className="flex flex-wrap gap-2">
-            {state.subjects.map((s) => (
-              <li
-                key={s.id}
-                className={cn(
-                  "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
-                  SUBJECT_COLORS[s.color].block
-                )}
-              >
-                <span className={cn("h-2 w-2 rounded-full", SUBJECT_COLORS[s.color].solid)} />
-                {s.name}
-                <span className="font-mono font-semibold">{hoursBySubject.get(s.id) ?? 0} ชม.</span>
-              </li>
-            ))}
+            {state.subjects.map((s) => {
+              const sc = getSubjectColor(s.color);
+              return (
+                <li
+                  key={s.id}
+                  style={sc.blockStyle}
+                  className={cn(
+                    "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+                    sc.blockClass
+                  )}
+                >
+                  <span
+                    className={cn("h-2 w-2 rounded-full", sc.solidClass)}
+                    style={sc.solidStyle}
+                  />
+                  {s.name}
+                  <span className="font-mono font-semibold">{hoursBySubject.get(s.id) ?? 0} ชม.</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -230,6 +237,7 @@ export function PlannerBoard() {
                 .map((b) => {
                   const subject = subjectById.get(b.subjectId);
                   if (!subject) return null;
+                  const sc = getSubjectColor(subject.color);
                   const startRow = b.startHour - FIRST_HOUR + 1;
                   const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
                   return (
@@ -239,9 +247,13 @@ export function PlannerBoard() {
                       onClick={() => setDraft(b)}
                       className={cn(
                         "z-[5] m-[3px] flex flex-col overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
-                        SUBJECT_COLORS[subject.color].block
+                        sc.blockClass
                       )}
-                      style={{ gridColumn: 2, gridRow: `${startRow} / span ${b.duration}` }}
+                      style={{
+                        ...sc.blockStyle,
+                        gridColumn: 2,
+                        gridRow: `${startRow} / span ${b.duration}`,
+                      }}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate font-semibold">{subject.name}</span>
@@ -331,6 +343,7 @@ export function PlannerBoard() {
             {state.blocks.map((b) => {
               const subject = subjectById.get(b.subjectId);
               if (!subject) return null;
+              const sc = getSubjectColor(subject.color);
               const startRow = b.startHour - FIRST_HOUR + 2;
               const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
               return (
@@ -340,9 +353,13 @@ export function PlannerBoard() {
                   onClick={() => setDraft(b)}
                   className={cn(
                     "z-[5] m-[3px] flex flex-col overflow-hidden rounded-lg border px-2.5 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
-                    SUBJECT_COLORS[subject.color].block
+                    sc.blockClass
                   )}
-                  style={{ gridColumn: b.day + 2, gridRow: `${startRow} / span ${b.duration}` }}
+                  style={{
+                    ...sc.blockStyle,
+                    gridColumn: b.day + 2,
+                    gridRow: `${startRow} / span ${b.duration}`,
+                  }}
                   aria-label={`${subject.name} ${b.topic} วัน${DAYS[b.day]} ${formatHour(b.startHour)}–${formatHour(b.startHour + b.duration)}`}
                 >
                   <span className="truncate font-semibold">{subject.name}</span>

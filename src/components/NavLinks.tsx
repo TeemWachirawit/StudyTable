@@ -28,6 +28,12 @@ const navLinks = [
     dot: "bg-mustard",
     activeClass: "bg-mustard-tint text-mustard-deep border-mustard/35",
   },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    dot: "bg-plum",
+    activeClass: "bg-plum-tint text-plum-deep border-plum/30",
+  },
 ];
 
 export function NavLinks({ className }: { className?: string }) {

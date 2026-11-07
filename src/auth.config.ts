@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 
-const protectedPaths = ["/planner", "/table", "/exam"];
+const protectedPaths = ["/planner", "/table", "/exam", "/dashboard"];
 const authPaths = ["/signin", "/signup"];
 
 export const authConfig = {
@@ -29,7 +29,7 @@ export const authConfig = {
       }
 
       if (isAuthPage && isLoggedIn) {
-        return Response.redirect(new URL("/planner", nextUrl.origin));
+        return Response.redirect(new URL("/", nextUrl.origin));
       }
 
       return true;

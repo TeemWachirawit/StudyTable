@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Palette, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Field, inputClass } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { COLOR_KEYS, SUBJECT_COLORS, type SubjectColor } from "@/lib/colors";
+import {
+  COLOR_KEYS,
+  EXTRA_PRESET_HEX,
+  SUBJECT_COLORS,
+  getSubjectColor,
+  isPresetColor,
+  type SubjectColor,
+} from "@/lib/colors";
 import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/study";
 
@@ -22,6 +29,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const valid = name.trim().length > 0;
 
+  const resolved = getSubjectColor(color);
   const submit = () => valid && onSave(name.trim(), color);
 
   return (
@@ -85,8 +93,10 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
           />
         </Field>
 
-        <fieldset>
-          <legend className="mb-2 text-sm font-semibold text-ink">สีประจำวิชา</legend>
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-semibold text-ink">สีประจำวิชา</legend>
+
+          {/* Preset colors */}
           <div className="flex flex-wrap gap-2">
             {COLOR_KEYS.map((key) => {
               const c = SUBJECT_COLORS[key];
@@ -98,22 +108,99 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
                   onClick={() => setColor(key)}
                   aria-pressed={selected}
                   className={cn(
-                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-all",
+                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
                     c.block,
                     selected && "ring-2 ring-ink ring-offset-2 ring-offset-sheet"
                   )}
                 >
-                  <span className={cn("flex h-4 w-4 items-center justify-center rounded-full text-sheet", c.solid)}>
+                  <span
+                    className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded-full text-sheet",
+                      c.solid
+                    )}
+                  >
                     {selected && <Check className="h-3 w-3" strokeWidth={3} />}
                   </span>
                   {c.label}
                 </button>
               );
             })}
+
+            {EXTRA_PRESET_HEX.map((item) => {
+              const selected =
+                !isPresetColor(color) && color.toLowerCase() === item.hex.toLowerCase();
+              const itemResolved = getSubjectColor(item.hex);
+              return (
+                <button
+                  key={item.hex}
+                  type="button"
+                  onClick={() => setColor(item.hex)}
+                  aria-pressed={selected}
+                  style={itemResolved.blockStyle}
+                  className={cn(
+                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                    selected && "ring-2 ring-ink ring-offset-2 ring-offset-sheet"
+                  )}
+                >
+                  <span
+                    style={itemResolved.solidStyle}
+                    className="flex h-4 w-4 items-center justify-center rounded-full text-sheet"
+                  >
+                    {selected && <Check className="h-3 w-3" strokeWidth={3} />}
+                  </span>
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Color Picker */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-paper p-3">
+            <div className="flex items-center gap-2.5">
+              <label
+                htmlFor="custom-subject-color"
+                className="relative flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-line-strong shadow-2xs"
+                style={{ backgroundColor: resolved.hex }}
+                title="คลิกเพื่อเลือกสีตามต้องการ"
+              >
+                <input
+                  id="custom-subject-color"
+                  type="color"
+                  value={resolved.hex}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <Palette className="h-4 w-4 text-white drop-shadow-xs" />
+              </label>
+              <div>
+                <p className="text-xs font-semibold text-ink">เลือกสีตามต้องการ (Custom Color)</p>
+                <p className="font-mono text-[11px] text-ink-muted">
+                  รหัสสีปัจจุบัน: {resolved.hex.toUpperCase()}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold",
+                resolved.blockClass
+              )}
+              style={resolved.blockStyle}
+            >
+              <span
+                className={cn("h-2.5 w-2.5 rounded-full", resolved.solidClass)}
+                style={resolved.solidStyle}
+              />
+              <span>{name.trim() || "ตัวอย่างสีวิชา"}</span>
+            </div>
           </div>
         </fieldset>
+
         {confirmingDelete && (
-          <p role="alert" className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-xs text-slate-deep">
+          <p
+            role="alert"
+            className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-xs text-slate-deep"
+          >
             การลบวิชา &ldquo;{subject?.name}&rdquo; จะลบตารางอ่านและรายการสอบของวิชานี้ทั้งหมดด้วย
           </p>
         )}

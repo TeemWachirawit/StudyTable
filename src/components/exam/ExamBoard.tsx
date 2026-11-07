@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BookPlus, Check, Clock, Pencil, Plus } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
-import { SUBJECT_COLORS } from "@/lib/colors";
+import { getSubjectColor } from "@/lib/colors";
 import { daysUntil, examReadiness, formatThaiDate, toISODate, uid } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -207,7 +207,7 @@ function ExamRow({
   const days = daysUntil(exam.date);
   const readiness = examReadiness(exam, subject);
   const chapters = subject?.chapters.filter((c) => exam.chapterIds.includes(c.id)) ?? [];
-  const color = subject ? SUBJECT_COLORS[subject.color] : null;
+  const color = subject ? getSubjectColor(subject.color) : null;
 
   return (
     <li className="flex flex-col gap-4 rounded-xl border border-line-strong bg-sheet p-4 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)] sm:flex-row sm:gap-5 sm:p-5">
@@ -233,7 +233,12 @@ function ExamRow({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="flex items-center gap-2 text-sm">
-              {color && <span className={cn("h-2.5 w-2.5 rounded-full", color.solid)} />}
+              {color && (
+                <span
+                  className={cn("h-2.5 w-2.5 rounded-full", color.solidClass)}
+                  style={color.solidStyle}
+                />
+              )}
               <span className="font-semibold text-ink-soft">{subject?.name ?? "ไม่พบวิชา"}</span>
             </p>
             <h3 className="mt-0.5 font-display text-xl font-bold text-ink">{exam.title || "การสอบ"}</h3>
@@ -312,8 +317,14 @@ function ExamRow({
             </div>
             <div className="h-2 rounded-full bg-paper-deep">
               <div
-                className={cn("h-2 rounded-full transition-[width]", readiness.pct === 100 ? "bg-sage" : (color?.solid ?? "bg-terracotta"))}
-                style={{ width: `${readiness.pct}%` }}
+                className={cn(
+                  "h-2 rounded-full transition-[width]",
+                  readiness.pct === 100 ? "bg-sage" : (color?.solidClass ?? "bg-terracotta")
+                )}
+                style={{
+                  ...(readiness.pct === 100 ? undefined : color?.solidStyle),
+                  width: `${readiness.pct}%`,
+                }}
               />
             </div>
           </div>

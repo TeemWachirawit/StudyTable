@@ -7,6 +7,13 @@ export default NextAuth({
 }).auth;
 
 export const config = {
-  matcher: ["/planner/:path*", "/table/:path*", "/exam/:path*", "/signin", "/signup"],
+  matcher: [
+    "/planner/:path*",
+    "/table/:path*",
+    "/exam/:path*",
+    "/dashboard/:path*",
+    "/signin",
+    "/signup",
+  ],
 };
 

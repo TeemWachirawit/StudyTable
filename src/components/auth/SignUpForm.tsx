@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/planner";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -189,7 +189,7 @@ export function SignUpForm() {
       <div className="mt-6 border-t border-line pt-5 text-center text-sm text-ink-soft">
         มีบัญชีอยู่แล้ว?{" "}
         <Link
-          href={`/signin${callbackUrl !== "/planner" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+          href={`/signin${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
           className="font-semibold text-terracotta-deep hover:underline"
         >
           เข้าสู่ระบบ

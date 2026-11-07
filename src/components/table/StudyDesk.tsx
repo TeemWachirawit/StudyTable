@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Pencil, Plus, X } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
-import { SUBJECT_COLORS } from "@/lib/colors";
+import { getSubjectColor } from "@/lib/colors";
 import { daysUntil, subjectProgress } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -105,9 +105,9 @@ export function StudyDesk() {
             editing === "new"
               ? undefined
               : () => {
-                  dispatch({ type: "deleteSubject", id: editing.id });
-                  setEditing(null);
-                }
+                dispatch({ type: "deleteSubject", id: editing.id });
+                setEditing(null);
+              }
           }
         />
       )}
@@ -144,7 +144,7 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
   const [newChapter, setNewChapter] = useState("");
   const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
-  const color = SUBJECT_COLORS[subject.color];
+  const color = getSubjectColor(subject.color);
   const { done, total, pct } = subjectProgress(subject);
 
   const plannedHours = state.blocks.filter((b) => b.subjectId === subject.id).reduce((n, b) => n + b.duration, 0);
@@ -172,12 +172,16 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
       aria-labelledby={`subject-${subject.id}`}
       className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-sheet shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]"
     >
-      <div className={cn("h-1.5", color.solid)} />
+      <div className={cn("h-1.5", color.solidClass)} style={color.solidStyle} />
       <div className="px-5 pt-4 pb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className={cn("h-2.5 w-2.5 rounded-full", color.solid)} aria-hidden="true" />
+              <span
+                className={cn("h-2.5 w-2.5 rounded-full", color.solidClass)}
+                style={color.solidStyle}
+                aria-hidden="true"
+              />
               <h2 id={`subject-${subject.id}`} className="font-display text-xl font-bold text-ink">
                 {subject.name}
               </h2>
@@ -214,7 +218,9 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
             <span className="text-ink-soft">
               อ่านแล้ว {done} จาก {total} บท
             </span>
-            <span className={cn("font-mono font-semibold", color.text)}>{pct}%</span>
+            <span className={cn("font-mono font-semibold", color.textClass)} style={color.textStyle}>
+              {pct}%
+            </span>
           </div>
           <div
             className="h-2.5 rounded-full bg-paper-deep"
@@ -224,7 +230,10 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
             aria-valuemax={100}
             aria-label={`ความคืบหน้า ${subject.name}`}
           >
-            <div className={cn("h-2.5 rounded-full transition-[width]", color.solid)} style={{ width: `${pct}%` }} />
+            <div
+              className={cn("h-2.5 rounded-full transition-[width]", color.solidClass)}
+              style={{ ...color.solidStyle, width: `${pct}%` }}
+            />
           </div>
         </div>
       </div>
