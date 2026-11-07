@@ -3,6 +3,19 @@ import type { NextAuthConfig } from "next-auth";
 const protectedPaths = ["/planner", "/table", "/exam", "/dashboard"];
 const authPaths = ["/signin", "/signup"];
 
+export function getAuthSecret(): string {
+  const secret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)?.trim();
+  if (secret) return secret;
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.NEXT_PHASE !== "phase-production-build" &&
+    (!process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production")
+  ) {
+    throw new Error("Missing AUTH_SECRET environment variable in production.");
+  }
+  return "studytable-dev-secret-change-in-production";
+}
+
 export const authConfig = {
   pages: {
     signIn: "/signin",

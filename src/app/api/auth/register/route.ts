@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db, isDatabaseConfigured } from "@/db";
 import { users } from "@/db/schema";
 import { saveUserStudyState } from "@/db/study-service";
-import { hashPassword } from "@/lib/password";
+import { hashPassword, MAX_PASSWORD_LENGTH } from "@/lib/password";
 import { createSeedState } from "@/lib/study";
 
 export async function POST(request: Request) {
@@ -28,23 +28,29 @@ export async function POST(request: Request) {
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
 
-    if (!name) {
+    if (!name || name.length > 100) {
       return NextResponse.json(
-        { error: "กรุณากรอกชื่อผู้ใช้งาน" },
+        { error: "กรุณากรอกชื่อผู้ใช้งาน (ไม่เกิน 100 ตัวอักษร)" },
         { status: 400 }
       );
     }
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (
+      !email ||
+      email.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
       return NextResponse.json(
         { error: "รูปแบบอีเมลไม่ถูกต้อง" },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 6 || password.length > MAX_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร" },
+        {
+          error: `รหัสผ่านต้องมีความยาวระหว่าง 6 ถึง ${MAX_PASSWORD_LENGTH} ตัวอักษร`,
+        },
         { status: 400 }
       );
     }
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
 
     const [createdUser] = await db
       .insert(users)

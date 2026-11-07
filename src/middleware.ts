@@ -1,9 +1,9 @@
 import NextAuth from "next-auth";
-import { authConfig } from "./auth.config";
+import { authConfig, getAuthSecret } from "./auth.config";
 
 export default NextAuth({
   ...authConfig,
-  secret: process.env.AUTH_SECRET || "studytable-dev-secret-change-in-production",
+  secret: getAuthSecret(),
 }).auth;
 
 export const config = {

@@ -5,20 +5,20 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
 import { verifyPassword } from "@/lib/password";
-import { authConfig } from "./auth.config";
+import { authConfig, getAuthSecret } from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret: process.env.AUTH_SECRET || "studytable-dev-secret-change-in-production",
+  secret: getAuthSecret(),
   ...(db
     ? {
-        adapter: DrizzleAdapter(db, {
-          usersTable: users,
-          accountsTable: accounts,
-          sessionsTable: sessions,
-          verificationTokensTable: verificationTokens,
-        }),
-      }
+      adapter: DrizzleAdapter(db, {
+        usersTable: users,
+        accountsTable: accounts,
+        sessionsTable: sessions,
+        verificationTokensTable: verificationTokens,
+      }),
+    }
     : {}),
   session: {
     strategy: "jwt",
@@ -52,7 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const valid = verifyPassword(password, user.passwordHash);
+        const valid = await verifyPassword(password, user.passwordHash);
         if (!valid) {
           return null;
         }
