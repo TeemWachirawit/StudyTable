@@ -54,7 +54,9 @@ function isValidStudyState(state: unknown): state is StudyState {
       typeof b.duration !== "number" ||
       !Number.isInteger(b.duration) ||
       b.duration < 1 ||
-      b.startHour + b.duration > LAST_HOUR
+      b.startHour + b.duration > LAST_HOUR ||
+      (b.type !== undefined && b.type !== "study" && b.type !== "class") ||
+      (b.location !== undefined && typeof b.location !== "string")
     ) {
       return false;
     }

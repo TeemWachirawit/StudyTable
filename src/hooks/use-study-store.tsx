@@ -26,6 +26,7 @@ type Action =
   | { type: "toggleChapter"; subjectId: string; chapterId: string }
   | { type: "deleteChapter"; subjectId: string; chapterId: string }
   | { type: "saveBlock"; block: StudyBlock }
+  | { type: "saveBlocks"; blocks: StudyBlock[] }
   | { type: "deleteBlock"; id: string }
   | { type: "saveExam"; exam: Exam }
   | { type: "deleteExam"; id: string };
@@ -138,6 +139,13 @@ function reducer(state: StudyState, action: Action): StudyState {
 
     case "saveBlock":
       return { ...state, blocks: upsert(state.blocks, action.block) };
+    case "saveBlocks": {
+      let current = state.blocks;
+      for (const b of action.blocks) {
+        current = upsert(current, b);
+      }
+      return { ...state, blocks: current };
+    }
     case "deleteBlock":
       return { ...state, blocks: state.blocks.filter((b) => b.id !== action.id) };
 

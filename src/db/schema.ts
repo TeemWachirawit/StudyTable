@@ -118,6 +118,8 @@ export const studyBlocks = pgTable(
     startHour: integer("start_hour").notNull(),
     duration: integer("duration").notNull(),
     topic: text("topic").default("").notNull(),
+    type: text("type").default("study").notNull(),
+    location: text("location").default("").notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.id] }),

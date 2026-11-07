@@ -69,7 +69,145 @@ export function examReadiness(exam: Exam, subject: Subject | undefined): { done:
   return { done, total: chapters.length, pct: chapters.length === 0 ? 0 : Math.round((done / chapters.length) * 100) };
 }
 
-/** Starter data so first-time visitors see a filled-in desk. */
+export function isClassBlock(b: StudyBlock): boolean {
+  return b.type === "class";
+}
+
+export function isStudyBlock(b: StudyBlock): boolean {
+  return b.type !== "class";
+}
+
+export interface StudySlotSuggestion {
+  id: string;
+  subjectId: string;
+  day: number;
+  startHour: number;
+  duration: number;
+  topic: string;
+  reason: string;
+  type: "study";
+}
+
+export interface SuggestOptions {
+  preferredWindow?: "evening" | "weekend" | "all";
+  hoursPerSubject?: number;
+  subjectIds?: string[];
+}
+
+/**
+ * Smart Study Allocator:
+ * Proposes non-conflicting study slots into free hours around classes and existing commitments.
+ */
+export function suggestStudyBlocks(state: StudyState, options: SuggestOptions = {}): StudySlotSuggestion[] {
+  const { preferredWindow = "all", hoursPerSubject = 2, subjectIds } = options;
+  const targetSubjects = subjectIds && subjectIds.length > 0
+    ? state.subjects.filter((s) => subjectIds.includes(s.id))
+    : state.subjects;
+
+  if (targetSubjects.length === 0) return [];
+
+  const simulatedBlocks: StudyBlock[] = [...state.blocks];
+  const suggestions: StudySlotSuggestion[] = [];
+
+  // Determine potential study hours by day based on preferredWindow
+  const getCandidateHoursForDay = (day: number): number[] => {
+    const isWeekend = day === 5 || day === 6;
+    if (preferredWindow === "evening") {
+      return isWeekend ? [] : [17, 18, 19, 20];
+    }
+    if (preferredWindow === "weekend") {
+      return isWeekend ? [9, 10, 11, 13, 14, 15, 16, 17] : [];
+    }
+    // "all": weekday evenings + weekend daytime
+    return isWeekend ? [9, 10, 11, 13, 14, 15, 16] : [17, 18, 19, 20];
+  };
+
+  for (const subject of targetSubjects) {
+    // Current study hours already allocated for this subject
+    const currentStudyHours = state.blocks
+      .filter((b) => b.subjectId === subject.id && isStudyBlock(b))
+      .reduce((sum, b) => sum + b.duration, 0);
+
+    let neededHours = Math.max(0, hoursPerSubject - currentStudyHours);
+    if (neededHours <= 0) neededHours = 1; // At least offer 1 slot if requested
+
+    // Pick topic: first unfinished chapter, or exam title, or general revision
+    const nextChapter = subject.chapters.find((c) => !c.done);
+    const upcomingExam = state.exams
+      .filter((e) => e.subjectId === subject.id && daysUntil(e.date) >= 0)
+      .sort((a, b) => a.date.localeCompare(b.date))[0];
+
+    const topic = nextChapter?.title ?? (upcomingExam ? `เตรียมสอบ ${upcomingExam.title}` : "ทบทวนสรุปเนื้อหา");
+
+    // Look for class days for this subject to suggest review post-class
+    const classBlocks = state.blocks.filter((b) => b.subjectId === subject.id && isClassBlock(b));
+    const classDays = classBlocks.map((b) => b.day);
+
+    // Days to search in order of preference:
+    // 1. Same day as class (evening review)
+    // 2. Next day
+    // 3. Weekends / other days
+    const candidateDays = [0, 1, 2, 3, 4, 5, 6].sort((a, b) => {
+      const aHasClass = classDays.includes(a);
+      const bHasClass = classDays.includes(b);
+      if (aHasClass && !bHasClass) return -1;
+      if (!aHasClass && bHasClass) return 1;
+      return a - b;
+    });
+
+    let hoursAllocated = 0;
+
+    for (const day of candidateDays) {
+      if (hoursAllocated >= neededHours) break;
+
+      const hours = getCandidateHoursForDay(day);
+      for (const startHour of hours) {
+        if (hoursAllocated >= neededHours) break;
+
+        const candidate: StudyBlock = {
+          id: uid(),
+          subjectId: subject.id,
+          day,
+          startHour,
+          duration: 1, // Allocate in 1-hour or 2-hour increments
+          topic,
+          type: "study",
+        };
+
+        if (!findConflict(simulatedBlocks, candidate)) {
+          let reason = "จัดสรรลงในช่วงเวลาว่าง";
+          if (classDays.includes(day)) {
+            reason = `ทบทวนหลังคาบเรียน${subject.name} (วัน${DAYS[day]})`;
+          } else if (upcomingExam) {
+            const daysLeft = daysUntil(upcomingExam.date);
+            reason = `เตรียมสอบ ${upcomingExam.title} (${daysLeft === 0 ? "สอบวันนี้" : `อีก ${daysLeft} วัน`})`;
+          } else if (nextChapter) {
+            reason = `เก็บเนื้อหา: ${nextChapter.title}`;
+          }
+
+          const suggestion: StudySlotSuggestion = {
+            id: candidate.id,
+            subjectId: subject.id,
+            day,
+            startHour,
+            duration: 1,
+            topic,
+            reason,
+            type: "study",
+          };
+
+          suggestions.push(suggestion);
+          simulatedBlocks.push(candidate);
+          hoursAllocated += 1;
+        }
+      }
+    }
+  }
+
+  return suggestions;
+}
+
+/** Starter data so first-time visitors see a filled-in desk with classes and study slots. */
 export function createSeedState(today: Date = new Date()): StudyState {
   const ch = (title: string, done = false) => ({ id: uid(), title, done });
   const inDays = (n: number) => {
@@ -109,28 +247,45 @@ export function createSeedState(today: Date = new Date()): StudyState {
     chapters: [ch("Reading Comprehension", true), ch("Tenses"), ch("Conditionals"), ch("Vocabulary Unit 5")],
   };
 
-  const block = (s: Subject, day: number, startHour: number, duration: number, topic: string): StudyBlock => ({
+  const classBlock = (s: Subject, day: number, startHour: number, duration: number, topic: string, location: string): StudyBlock => ({
     id: uid(),
     subjectId: s.id,
     day,
     startHour,
     duration,
     topic,
+    type: "class",
+    location,
+  });
+
+  const studyBlock = (s: Subject, day: number, startHour: number, duration: number, topic: string): StudyBlock => ({
+    id: uid(),
+    subjectId: s.id,
+    day,
+    startHour,
+    duration,
+    topic,
+    type: "study",
   });
 
   return {
     subjects: [math, physics, bio, english],
     blocks: [
-      block(math, 0, 17, 2, "ปริพันธ์"),
-      block(english, 0, 20, 1, "Tenses"),
-      block(physics, 1, 18, 2, "แม่เหล็กและไฟฟ้า"),
-      block(bio, 2, 17, 1, "วิวัฒนาการ"),
-      block(math, 2, 19, 2, "ลำดับและอนุกรม"),
-      block(english, 3, 18, 1, "Conditionals"),
-      block(bio, 3, 20, 2, "ทบทวนพันธุศาสตร์"),
-      block(physics, 4, 17, 2, "ทำโจทย์ไฟฟ้า"),
-      block(math, 5, 9, 3, "ติวข้อสอบเก่า"),
-      block(physics, 6, 13, 2, "สรุปทั้งบท"),
+      // 🎓 ตารางเรียน (Classes in daytime)
+      classBlock(math, 0, 9, 3, "บรรยาย: แคลคูลัสและปริพันธ์", "ห้อง SC-302"),
+      classBlock(english, 1, 10, 2, "English for Academic Purposes", "อาคาร 4 ห้อง 401"),
+      classBlock(physics, 2, 13, 3, "ฟิสิกส์แม่เหล็กไฟฟ้า & Lab", "ตึกฟิสิกส์ Lab 2"),
+      classBlock(bio, 3, 9, 2, "ชีววิทยาเซลล์และพันธุศาสตร์", "ห้องชีวะ 205"),
+      classBlock(math, 4, 13, 2, "แบบฝึกหัดคณิตศาสตร์", "ห้อง SC-101"),
+
+      // 📖 ตารางอ่านหนังสือ (Study sessions after classes & weekend)
+      studyBlock(math, 0, 18, 2, "ปริพันธ์ (ทบทวนหลังเรียน)"),
+      studyBlock(english, 1, 19, 1, "Tenses & Vocabulary"),
+      studyBlock(physics, 2, 18, 2, "แม่เหล็กและไฟฟ้า"),
+      studyBlock(bio, 3, 17, 2, "ทบทวนพันธุศาสตร์"),
+      studyBlock(physics, 4, 17, 2, "ทำโจทย์ไฟฟ้า"),
+      studyBlock(math, 5, 9, 3, "ติวข้อสอบเก่าแคลคูลัส"),
+      studyBlock(bio, 6, 13, 2, "สรุปเนื้อหาวิวัฒนาการ"),
     ],
     exams: [
       {

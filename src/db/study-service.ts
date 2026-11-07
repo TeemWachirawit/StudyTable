@@ -46,6 +46,8 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
       startHour: b.startHour,
       duration: b.duration,
       topic: b.topic,
+      type: (b.type as "study" | "class") || "study",
+      location: b.location || "",
     })),
     exams: examRows.map((e) => ({
       id: e.id,
@@ -106,6 +108,8 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
           startHour: b.startHour,
           duration: b.duration,
           topic: b.topic ?? "",
+          type: b.type ?? "study",
+          location: b.location ?? "",
         }))
       );
     }

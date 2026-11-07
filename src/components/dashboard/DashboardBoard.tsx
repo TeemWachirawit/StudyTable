@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 import {
+  BookOpen,
   BookOpenCheck,
   BookPlus,
   CalendarDays,
   Check,
   Clock,
+  GraduationCap,
   Hourglass,
+  MapPin,
   Palette,
   Pencil,
   PieChart,
@@ -24,6 +27,8 @@ import {
   examReadiness,
   formatHour,
   formatThaiDate,
+  isClassBlock,
+  isStudyBlock,
   subjectProgress,
   toISODate,
   uid,
@@ -47,6 +52,7 @@ export function DashboardBoard() {
   const [editingBlock, setEditingBlock] = useState<StudyBlock | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [dayFilter, setDayFilter] = useState<number | "all">("all");
+  const [blockTypeFilter, setBlockTypeFilter] = useState<"all" | "class" | "study">("all");
 
   const subjectById = useMemo(
     () => new Map(state.subjects.map((s) => [s.id, s])),
@@ -56,6 +62,8 @@ export function DashboardBoard() {
   // Analytics calculations
   const analytics = useMemo(() => {
     const totalHours = state.blocks.reduce((sum, b) => sum + b.duration, 0);
+    const classHours = state.blocks.filter(isClassBlock).reduce((sum, b) => sum + b.duration, 0);
+    const studyHours = state.blocks.filter(isStudyBlock).reduce((sum, b) => sum + b.duration, 0);
     const allChapters = state.subjects.flatMap((s) => s.chapters);
     const doneChapters = allChapters.filter((c) => c.done).length;
     const overallPct = allChapters.length
@@ -95,6 +103,8 @@ export function DashboardBoard() {
 
     return {
       totalHours,
+      classHours,
+      studyHours,
       totalChapters: allChapters.length,
       doneChapters,
       overallPct,
@@ -105,7 +115,7 @@ export function DashboardBoard() {
     };
   }, [state]);
 
-  const openNewBlock = () => {
+  const openNewBlock = (type: "class" | "study" = "study") => {
     if (state.subjects.length === 0) {
       setEditingSubject("new");
       return;
@@ -113,10 +123,12 @@ export function DashboardBoard() {
     setEditingBlock({
       id: uid(),
       subjectId: state.subjects[0].id,
-      day: weekdayIndex(new Date()),
-      startHour: 18,
-      duration: 1,
+      day: 0,
+      startHour: type === "class" ? 9 : 18,
+      duration: type === "class" ? 2 : 1,
       topic: "",
+      type,
+      location: "",
     });
   };
 
@@ -151,8 +163,11 @@ export function DashboardBoard() {
             <Button variant="outline" size="sm" onClick={() => setEditingSubject("new")}>
               <BookPlus className="h-4 w-4" /> เพิ่มวิชา
             </Button>
-            <Button variant="outline" size="sm" onClick={openNewBlock}>
-              <CalendarDays className="h-4 w-4" /> เพิ่มเวลาเรียน
+            <Button variant="outline" size="sm" onClick={() => openNewBlock("class")}>
+              <GraduationCap className="h-4 w-4 text-terracotta" /> +ตารางเรียน
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => openNewBlock("study")}>
+              <BookOpen className="h-4 w-4 text-sage" /> +ตารางอ่าน
             </Button>
             <Button size="sm" onClick={openNewExam}>
               <Plus className="h-4 w-4" /> เพิ่มการสอบ
@@ -174,6 +189,11 @@ export function DashboardBoard() {
 
   const sortedBlocks = [...state.blocks]
     .filter((b) => dayFilter === "all" || b.day === dayFilter)
+    .filter((b) => {
+      if (blockTypeFilter === "class") return isClassBlock(b);
+      if (blockTypeFilter === "study") return isStudyBlock(b);
+      return true;
+    })
     .sort((a, b) => (a.day !== b.day ? a.day - b.day : a.startHour - b.startHour));
 
   const sortedExams = [...state.exams].sort((a, b) => a.date.localeCompare(b.date));
@@ -186,9 +206,9 @@ export function DashboardBoard() {
         {/* ───────── 1. KPI Summary Strip ───────── */}
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
-            label="ชั่วโมงอ่านต่อสัปดาห์"
+            label="เวลาเรียนและอ่านรวม"
             value={`${analytics.totalHours} ชม.`}
-            sub={`${state.blocks.length} ช่วงเวลาที่วางแผนไว้`}
+            sub={`เรียน ${analytics.classHours} ชม. · อ่าน ${analytics.studyHours} ชม.`}
             badge="Planner"
             toneClass="border-terracotta/25 bg-terracotta-tint text-terracotta-deep"
           />
@@ -473,7 +493,7 @@ export function DashboardBoard() {
                 )}
               >
                 <CalendarDays className="h-3.5 w-3.5 text-terracotta" />
-                ตารางอ่านหนังสือ ({state.blocks.length})
+                ตารางเรียนและอ่าน ({state.blocks.length})
               </button>
               <button
                 type="button"
@@ -528,11 +548,12 @@ export function DashboardBoard() {
               </div>
             )}
 
-            {/* TAB 2: Study Schedule Manager */}
+            {/* TAB 2: Study & Class Schedule Manager */}
             {activeTab === "schedule" && (
               <div className="space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-1.5">
+                    {/* Day filters */}
                     <button
                       type="button"
                       onClick={() => setDayFilter("all")}
@@ -562,14 +583,59 @@ export function DashboardBoard() {
                     ))}
                   </div>
 
-                  <Button size="sm" onClick={openNewBlock}>
-                    <Plus className="h-4 w-4" /> เพิ่มช่วงอ่านหนังสือ
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Block type filters */}
+                    <div className="flex items-center gap-1 rounded-lg border border-line bg-paper p-0.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setBlockTypeFilter("all")}
+                        className={cn(
+                          "rounded-md px-2 py-1 font-medium transition-colors",
+                          blockTypeFilter === "all"
+                            ? "bg-sheet font-semibold text-ink shadow-2xs"
+                            : "text-ink-soft hover:text-ink"
+                        )}
+                      >
+                        ทั้งหมด
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlockTypeFilter("class")}
+                        className={cn(
+                          "rounded-md px-2 py-1 font-medium transition-colors",
+                          blockTypeFilter === "class"
+                            ? "bg-sheet font-semibold text-terracotta-deep shadow-2xs"
+                            : "text-ink-soft hover:text-ink"
+                        )}
+                      >
+                        ตารางเรียน
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlockTypeFilter("study")}
+                        className={cn(
+                          "rounded-md px-2 py-1 font-medium transition-colors",
+                          blockTypeFilter === "study"
+                            ? "bg-sheet font-semibold text-sage-deep shadow-2xs"
+                            : "text-ink-soft hover:text-ink"
+                        )}
+                      >
+                        ตารางอ่าน
+                      </button>
+                    </div>
+
+                    <Button variant="outline" size="sm" onClick={() => openNewBlock("class")}>
+                      <GraduationCap className="h-4 w-4 text-terracotta" /> เพิ่มตารางเรียน
+                    </Button>
+                    <Button size="sm" onClick={() => openNewBlock("study")}>
+                      <Plus className="h-4 w-4" /> เพิ่มตารางอ่าน
+                    </Button>
+                  </div>
                 </div>
 
                 {sortedBlocks.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-line-strong py-12 text-center text-sm text-ink-muted">
-                    ไม่มีรายการตารางเวลาในวันที่เลือก
+                    ไม่มีรายการตารางเวลาในวันที่หรือประเภทที่เลือก
                   </div>
                 ) : (
                   <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
@@ -578,14 +644,16 @@ export function DashboardBoard() {
                       const color = subj
                         ? getSubjectColor(subj.color)
                         : getSubjectColor("terracotta");
+                      const isClass = isClassBlock(block);
+
                       return (
                         <div
                           key={block.id}
                           className="flex flex-wrap items-center justify-between gap-3 bg-sheet px-4 py-3 transition-colors hover:bg-paper"
                         >
-                          <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
                             <span
-                              className="inline-flex w-20 shrink-0 justify-center rounded-md border border-line bg-paper px-2 py-1 text-xs font-semibold text-ink"
+                              className="inline-flex w-16 shrink-0 justify-center rounded-md border border-line bg-paper px-2 py-1 text-xs font-semibold text-ink"
                             >
                               วัน{DAYS[block.day]}
                             </span>
@@ -606,6 +674,22 @@ export function DashboardBoard() {
                               />
                               {subj?.name ?? "ไม่พบวิชา"}
                             </span>
+                            <span
+                              className={cn(
+                                "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase shrink-0",
+                                isClass
+                                  ? "bg-terracotta/20 text-terracotta-deep"
+                                  : "bg-sage/20 text-sage-deep"
+                              )}
+                            >
+                              {isClass ? "ตารางเรียน" : "ตารางอ่าน"}
+                            </span>
+                            {isClass && block.location && (
+                              <span className="inline-flex items-center gap-1 font-mono text-xs text-ink-muted">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                {block.location}
+                              </span>
+                            )}
                             {block.topic && (
                               <span className="truncate text-sm text-ink">{block.topic}</span>
                             )}
@@ -766,8 +850,12 @@ export function DashboardBoard() {
           subjects={state.subjects}
           blocks={state.blocks}
           onClose={() => setEditingBlock(null)}
-          onSave={(block) => {
-            dispatch({ type: "saveBlock", block });
+          onSave={(block, followUp) => {
+            if (followUp) {
+              dispatch({ type: "saveBlocks", blocks: [block, followUp] });
+            } else {
+              dispatch({ type: "saveBlock", block });
+            }
             setEditingBlock(null);
           }}
           onDelete={(id) => {
