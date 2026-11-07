@@ -81,20 +81,33 @@ function reducer(state: StudyState, action: Action): StudyState {
             : s
         ),
       };
-    case "updateChapter":
+    case "updateChapter": {
+      const targetSubject = state.subjects.find((s) => s.id === action.subjectId);
+      const oldChapter = targetSubject?.chapters.find((c) => c.id === action.chapterId);
+      const oldTitle = oldChapter?.title;
+
       return {
         ...state,
         subjects: state.subjects.map((s) =>
           s.id === action.subjectId
             ? {
-              ...s,
-              chapters: s.chapters.map((c) =>
-                c.id === action.chapterId ? { ...c, title: action.title } : c
-              ),
-            }
+                ...s,
+                chapters: s.chapters.map((c) =>
+                  c.id === action.chapterId ? { ...c, title: action.title } : c
+                ),
+              }
             : s
         ),
+        blocks:
+          oldTitle && oldTitle !== action.title
+            ? state.blocks.map((b) =>
+                b.subjectId === action.subjectId && b.topic === oldTitle
+                  ? { ...b, topic: action.title }
+                  : b
+              )
+            : state.blocks,
       };
+    }
     case "toggleChapter":
       return {
         ...state,
@@ -227,6 +240,7 @@ export function StudyStoreProvider({ children }: { children: ReactNode }) {
 
     if (!userId || !isDirtyRef.current) return;
 
+    const controller = new AbortController();
     setSyncStatus("saving");
     const timer = setTimeout(async () => {
       try {
@@ -234,6 +248,7 @@ export function StudyStoreProvider({ children }: { children: ReactNode }) {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ state }),
+          signal: controller.signal,
         });
         if (res.ok) {
           isDirtyRef.current = false;
@@ -241,12 +256,16 @@ export function StudyStoreProvider({ children }: { children: ReactNode }) {
         } else {
           setSyncStatus("error");
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setSyncStatus("error");
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [state, hydrated, userId, storageKey]);
 
   return (

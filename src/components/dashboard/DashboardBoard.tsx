@@ -967,6 +967,9 @@ function DashboardSubjectCard({
                     value={editingTitle}
                     onChange={(e) => setEditingTitle(e.target.value)}
                     onBlur={() => commitChapterEdit(c.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setEditingChapterId(null);
+                    }}
                     autoFocus
                   />
                 </form>

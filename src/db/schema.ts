@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   primaryKey,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import type { SubjectColor } from "@/lib/colors";
 
@@ -96,7 +97,13 @@ export const chapters = pgTable(
     done: boolean("done").default(false).notNull(),
     position: integer("position").default(0).notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+  (t) => [
+    primaryKey({ columns: [t.userId, t.id] }),
+    foreignKey({
+      columns: [t.userId, t.subjectId],
+      foreignColumns: [subjects.userId, subjects.id],
+    }).onDelete("cascade"),
+  ]
 );
 
 export const studyBlocks = pgTable(
@@ -112,7 +119,13 @@ export const studyBlocks = pgTable(
     duration: integer("duration").notNull(),
     topic: text("topic").default("").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+  (t) => [
+    primaryKey({ columns: [t.userId, t.id] }),
+    foreignKey({
+      columns: [t.userId, t.subjectId],
+      foreignColumns: [subjects.userId, subjects.id],
+    }).onDelete("cascade"),
+  ]
 );
 
 export const exams = pgTable(
@@ -130,7 +143,13 @@ export const exams = pgTable(
     extraTopics: jsonb("extra_topics").$type<string[]>().default([]).notNull(),
     notes: text("notes").default("").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.id] })]
+  (t) => [
+    primaryKey({ columns: [t.userId, t.id] }),
+    foreignKey({
+      columns: [t.userId, t.subjectId],
+      foreignColumns: [subjects.userId, subjects.id],
+    }).onDelete("cascade"),
+  ]
 );
 
 export type User = typeof users.$inferSelect;

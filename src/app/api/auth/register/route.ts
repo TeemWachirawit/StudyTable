@@ -83,9 +83,14 @@ export async function POST(request: Request) {
         email: users.email,
       });
 
-    // Seed starter StudyState for the new user
+    // Seed starter StudyState for the new user; roll back user if seeding fails
     const starterState = createSeedState();
-    await saveUserStudyState(createdUser.id, starterState);
+    try {
+      await saveUserStudyState(createdUser.id, starterState);
+    } catch (seedErr) {
+      await db.delete(users).where(eq(users.id, createdUser.id));
+      throw seedErr;
+    }
 
     return NextResponse.json(
       { user: createdUser },
