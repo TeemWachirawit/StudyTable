@@ -19,6 +19,7 @@ import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
 import {
   DAYS,
+  DAYS_SHORT,
   daysUntil,
   examReadiness,
   formatHour,
@@ -84,6 +85,14 @@ export function DashboardBoard() {
       .filter((e) => daysUntil(e.date) >= 0)
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    const hoursByDay = DAYS.map((dayName, dayIdx) => {
+      const hours = state.blocks
+        .filter((b) => b.day === dayIdx)
+        .reduce((sum, b) => sum + b.duration, 0);
+      return { dayName, dayIdx, hours };
+    });
+    const maxDayHours = Math.max(1, ...hoursByDay.map((d) => d.hours));
+
     return {
       totalHours,
       totalChapters: allChapters.length,
@@ -91,6 +100,8 @@ export function DashboardBoard() {
       overallPct,
       subjectStats,
       upcomingExams,
+      hoursByDay,
+      maxDayHours,
     };
   }, [state]);
 
@@ -211,7 +222,7 @@ export function DashboardBoard() {
         {/* ───────── 2. Visual Analytics Charts ───────── */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Chart A: Donut Chart — Study Hours Share by Subject */}
-          <section className="flex flex-col justify-between rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
+          <section className="flex flex-col rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-terracotta uppercase">
@@ -235,43 +246,86 @@ export function DashboardBoard() {
                 ยังไม่มีรายวิชา เพิ่มวิชาเพื่อดูแผนภูมิสัดส่วนเวลาเรียน
               </div>
             ) : (
-              <div className="mt-6 grid items-center gap-6 sm:grid-cols-[11.5rem_1fr]">
-                <DonutChart
-                  segments={analytics.subjectStats.map((item) => ({
-                    id: item.subject.id,
-                    label: item.subject.name,
-                    value: item.hours,
-                    hex: item.color.hex,
-                  }))}
-                  totalHours={analytics.totalHours}
-                />
+              <>
+                <div className="mt-5 grid items-center gap-6 sm:grid-cols-[11.5rem_1fr]">
+                  <DonutChart
+                    segments={analytics.subjectStats.map((item) => ({
+                      id: item.subject.id,
+                      label: item.subject.name,
+                      value: item.hours,
+                      hex: item.color.hex,
+                    }))}
+                    totalHours={analytics.totalHours}
+                  />
 
-                <ul className="space-y-2.5">
-                  {analytics.subjectStats.map(({ subject, hours, hourSharePct, color }) => (
-                    <li
-                      key={subject.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2 text-sm"
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <span
-                          className="h-3 w-3 shrink-0 rounded-full shadow-2xs"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <span className="truncate font-semibold text-ink">{subject.name}</span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
-                        <span className="font-semibold text-ink">{hours} ชม.</span>
-                        <span className="w-10 text-right text-ink-muted">({hourSharePct}%)</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                  <ul className="space-y-2.5">
+                    {analytics.subjectStats.map(({ subject, hours, hourSharePct, color }) => (
+                      <li
+                        key={subject.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2 text-sm"
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-full shadow-2xs"
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          <span className="truncate font-semibold text-ink">{subject.name}</span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
+                          <span className="font-semibold text-ink">{hours} ชม.</span>
+                          <span className="w-10 text-right text-ink-muted">({hourSharePct}%)</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Daily study hours breakdown (Mon-Sun) */}
+                <div className="mt-6 border-t border-line pt-4">
+                  <p className="mb-3 font-mono text-xs font-semibold tracking-wide text-ink-muted uppercase">
+                    ชั่วโมงอ่านหนังสือรายวัน (จันทร์–อาทิตย์)
+                  </p>
+                  <div className="grid grid-cols-7 gap-2">
+                    {analytics.hoursByDay.map(({ dayName, dayIdx, hours }) => {
+                      const heightPct =
+                        hours > 0 ? Math.max(18, Math.round((hours / analytics.maxDayHours) * 100)) : 0;
+                      const isToday = dayIdx === weekdayIndex(new Date());
+                      return (
+                        <div
+                          key={dayName}
+                          className="flex flex-col items-center rounded-xl border border-line bg-paper px-1.5 py-2.5"
+                        >
+                          <span className="font-mono text-[11px] font-semibold text-ink">
+                            {hours > 0 ? `${hours}ชม.` : "–"}
+                          </span>
+                          <div className="my-2 flex h-14 w-3 items-end overflow-hidden rounded-full bg-paper-deep">
+                            <div
+                              className={cn(
+                                "w-full rounded-full transition-all duration-300",
+                                isToday ? "bg-terracotta" : "bg-terracotta/65"
+                              )}
+                              style={{ height: `${heightPct}%` }}
+                            />
+                          </div>
+                          <span
+                            className={cn(
+                              "text-[11px] font-medium",
+                              isToday ? "font-bold text-terracotta-deep" : "text-ink-soft"
+                            )}
+                          >
+                            {DAYS_SHORT[dayIdx]}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
           </section>
 
           {/* Chart B: Subject Progress Comparison & Exam Readiness */}
-          <section className="flex flex-col justify-between rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
+          <section className="flex flex-col rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-sage uppercase">
