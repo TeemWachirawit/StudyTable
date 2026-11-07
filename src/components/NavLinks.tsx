@@ -39,7 +39,13 @@ const navLinks = [
 export function NavLinks({ className }: { className?: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="หน้าหลัก" className={cn("flex items-center gap-1.5 text-sm font-medium", className)}>
+    <nav
+      aria-label="หน้าหลัก"
+      className={cn(
+        "flex items-center gap-1 overflow-x-auto text-xs font-medium sm:gap-1.5 sm:text-sm",
+        className
+      )}
+    >
       {navLinks.map((link) => {
         const active = pathname.startsWith(link.href);
         return (
@@ -48,13 +54,13 @@ export function NavLinks({ className }: { className?: string }) {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 transition-colors",
+              "inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors sm:gap-2 sm:px-3",
               active
                 ? link.activeClass
                 : "border-transparent text-ink-soft hover:bg-paper-deep hover:text-ink"
             )}
           >
-            <span className={cn("h-2 w-2 rounded-full", link.dot)} aria-hidden="true" />
+            <span className={cn("hidden h-2 w-2 rounded-full sm:inline-block", link.dot)} aria-hidden="true" />
             {link.label}
           </Link>
         );

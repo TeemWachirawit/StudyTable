@@ -59,7 +59,7 @@ export function PlannerPreview({ className }: { className?: string }) {
           <span className="text-sm font-semibold text-ink">สัปดาห์ที่ 3 · พ.ย.</span>
         </div>
         <span className="rounded-full bg-terracotta-tint px-2.5 py-0.5 font-mono text-xs font-medium text-terracotta-deep">
-          14 ชม. วางแผนไว้
+          17 ชม. วางแผนไว้
         </span>
       </div>
 
@@ -67,15 +67,22 @@ export function PlannerPreview({ className }: { className?: string }) {
         className="grid text-[11px]"
         style={{
           gridTemplateColumns: "3rem repeat(7, minmax(0, 1fr))",
-          gridTemplateRows: `2rem repeat(${hours.length}, 2.5rem)`,
+          gridTemplateRows: `2rem repeat(${hours.length}, 2.65rem)`,
         }}
       >
         {/* header row */}
-        <div className="border-b border-r border-line bg-paper" />
-        {days.map((d) => (
+        <div
+          className="border-b border-r border-line bg-paper"
+          style={{ gridColumn: 1, gridRow: 1 }}
+        />
+        {days.map((d, i) => (
           <div
             key={d}
-            className="flex items-center justify-center border-b border-r border-line bg-paper font-semibold text-ink-soft last:border-r-0"
+            className={cn(
+              "flex items-center justify-center border-b border-r border-line bg-paper font-semibold text-ink-soft",
+              i === days.length - 1 && "border-r-0"
+            )}
+            style={{ gridColumn: i + 2, gridRow: 1 }}
           >
             {d}
           </div>
@@ -85,7 +92,10 @@ export function PlannerPreview({ className }: { className?: string }) {
         {hours.map((h, r) => (
           <div key={h} className="contents">
             <div
-              className="border-r border-b border-line bg-sheet pr-1.5 pt-1 text-right font-mono text-[10px] text-ink-muted"
+              className={cn(
+                "border-r border-b border-line bg-sheet pr-1.5 pt-1 text-right font-mono text-[10px] text-ink-muted",
+                r === hours.length - 1 && "border-b-0"
+              )}
               style={{ gridColumn: 1, gridRow: r + 2 }}
             >
               {h}
@@ -93,7 +103,11 @@ export function PlannerPreview({ className }: { className?: string }) {
             {days.map((_, c) => (
               <div
                 key={c}
-                className="border-r border-b border-line/70 bg-sheet last:border-r-0"
+                className={cn(
+                  "border-r border-b border-line/70 bg-sheet",
+                  c === days.length - 1 && "border-r-0",
+                  r === hours.length - 1 && "border-b-0"
+                )}
                 style={{ gridColumn: c + 2, gridRow: r + 2 }}
               />
             ))}
@@ -105,13 +119,17 @@ export function PlannerPreview({ className }: { className?: string }) {
           <div
             key={i}
             className={cn(
-              "z-10 m-[3px] overflow-hidden rounded-md border px-1.5 py-1 leading-tight",
+              "z-10 m-[3px] flex flex-col justify-center overflow-hidden rounded-md border px-1.5 py-1 leading-tight",
               subjects[b.subject].block
             )}
             style={{ gridColumn: b.day + 1, gridRow: `${b.start + 2} / span ${b.span}` }}
           >
             <span className="block truncate font-semibold">{b.label}</span>
-            <span className="hidden truncate opacity-80 sm:block">{subjects[b.subject].name}</span>
+            {b.span > 1 && (
+              <span className="mt-0.5 hidden truncate text-[10px] opacity-80 sm:block">
+                {subjects[b.subject].name}
+              </span>
+            )}
           </div>
         ))}
       </div>

@@ -87,7 +87,7 @@ export default function LandingPage() {
       {/* ───────── Hero ───────── */}
       <section className="bg-ruled border-b border-line">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pt-16 pb-20 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:pt-24 lg:pb-28">
-          <div>
+          <div className="min-w-0">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line-strong bg-sheet px-3.5 py-1.5 text-xs font-medium text-ink-soft shadow-2xs">
               <span className="flex items-center gap-1" aria-hidden="true">
                 <span className="h-2 w-2 rounded-full bg-terracotta" />
@@ -116,7 +116,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <PlannerPreview className="lg:rotate-[0.4deg]" />
+          <PlannerPreview className="min-w-0" />
         </div>
       </section>
 
@@ -128,7 +128,7 @@ export default function LandingPage() {
               key={f.id}
               href={`#${f.id}`}
               className={cn(
-                "group flex items-start gap-4 py-7 transition-colors md:px-7 md:first:pl-0 md:last:pr-0",
+                "group flex items-start gap-4 px-4 py-7 transition-colors md:px-6",
                 f.tone.cardHover
               )}
             >
@@ -165,7 +165,7 @@ export default function LandingPage() {
               id={f.id}
               className="grid scroll-mt-24 items-center gap-10 lg:grid-cols-2 lg:gap-16"
             >
-              <div className={i % 2 === 1 ? "lg:order-2" : undefined}>
+              <div className={cn("min-w-0", i % 2 === 1 && "lg:order-2")}>
                 <span
                   className={cn(
                     "inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs font-semibold",
@@ -193,7 +193,7 @@ export default function LandingPage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
-              <div className={i % 2 === 1 ? "lg:order-1" : undefined}>{f.preview}</div>
+              <div className={cn("min-w-0", i % 2 === 1 && "lg:order-1")}>{f.preview}</div>
             </article>
           ))}
         </div>
