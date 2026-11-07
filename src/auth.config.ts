@@ -1,6 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 
-const protectedPaths = ["/planner", "/table", "/exam", "/dashboard"];
+const protectedPaths = ["/planner", "/table", "/exam", "/dashboard", "/settings"];
 const authPaths = ["/signin", "/signup"];
 
 export function getAuthSecret(): string {
@@ -47,17 +47,24 @@ export const authConfig = {
 
       return true;
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.picture = user.image;
+      }
+      if (trigger === "update" && session) {
+        if (session.name !== undefined) token.name = session.name;
+        if (session.image !== undefined) token.picture = session.image;
       }
       return token;
     },
     session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = String(token.id);
+      if (session.user) {
+        if (token.id) session.user.id = String(token.id);
+        if (token.name) session.user.name = token.name as string;
+        if (token.picture) session.user.image = token.picture as string;
       }
       return session;
     },

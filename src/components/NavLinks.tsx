@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Check, CloudAlert, Loader2, LogOut, User } from "lucide-react";
+import { Check, CloudAlert, Loader2, LogOut, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "./ui/button";
 import { useStudyStore } from "@/hooks/use-study-store";
+import { UserAvatar } from "./ui/UserAvatar";
 
 const navLinks = [
   {
@@ -132,30 +133,44 @@ export function NavbarStatusOrCta() {
         <button
           type="button"
           onClick={() => setMenuOpen((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep"
+          className="inline-flex items-center gap-2 rounded-lg border border-line bg-paper py-1 pr-3 pl-1.5 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep"
         >
-          <User className="h-3.5 w-3.5 shrink-0 text-terracotta" />
+          <UserAvatar image={session.user.image} name={session.user.name} size="sm" />
           <span className="max-w-32 truncate">{session.user.name || session.user.email}</span>
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-48 rounded-xl border border-line-strong bg-sheet p-1.5 shadow-md">
-            <div className="border-b border-line px-2.5 py-2">
-              <p className="truncate text-xs font-semibold text-ink">
-                {session.user.name || "ผู้ใช้งาน"}
-              </p>
-              {session.user.email && (
-                <p className="truncate text-[11px] text-ink-muted">{session.user.email}</p>
-              )}
+          <div className="absolute right-0 mt-2 w-52 rounded-xl border border-line-strong bg-sheet p-1.5 shadow-md">
+            <div className="flex items-center gap-2.5 border-b border-line px-2.5 py-2.5">
+              <UserAvatar image={session.user.image} name={session.user.name} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-ink">
+                  {session.user.name || "ผู้ใช้งาน"}
+                </p>
+                {session.user.email && (
+                  <p className="truncate text-[11px] text-ink-muted">{session.user.email}</p>
+                )}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-slate-deep transition-colors hover:bg-slate-tint"
-            >
-              <LogOut className="h-3.5 w-3.5 shrink-0" />
-              ออกจากระบบ
-            </button>
+
+            <div className="mt-1 space-y-0.5">
+              <Link
+                href="/settings"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-ink transition-colors hover:bg-paper-deep"
+              >
+                <Settings className="h-3.5 w-3.5 shrink-0 text-terracotta" />
+                ตั้งค่าบัญชี
+              </Link>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-slate-deep transition-colors hover:bg-slate-tint"
+              >
+                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                ออกจากระบบ
+              </button>
+            </div>
           </div>
         )}
       </div>
