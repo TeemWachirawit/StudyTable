@@ -18,6 +18,9 @@
   --color-terracotta: #2563eb;
   --color-terracotta-deep: #1d4ed8;
   --color-terracotta-tint: #eff6ff;
+  --color-cobalt: #2563eb;
+  --color-cobalt-deep: #1d4ed8;
+  --color-cobalt-tint: #eff6ff;
 
   /* Primary Productivity Accent 2: Fresh Mint / Soft Emerald */
   --color-sage: #0d9488;
@@ -33,6 +36,9 @@
   --color-slate: #e11d48;
   --color-slate-deep: #9f1239;
   --color-slate-tint: #fff1f2;
+  --color-rose: #e11d48;
+  --color-rose-deep: #9f1239;
+  --color-rose-tint: #fff1f2;
 
   /* Supporting Subject Accent 5: Soft Violet / Lavender */
   --color-plum: #7c3aed;

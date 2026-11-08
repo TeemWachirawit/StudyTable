@@ -30,6 +30,20 @@ export function ExamBoard() {
   const upcoming = sorted.filter((e) => daysUntil(e.date) >= 0);
   const past = sorted.filter((e) => daysUntil(e.date) < 0).reverse();
 
+  const stats = useMemo(() => {
+    if (upcoming.length === 0) return null;
+    const nextDays = daysUntil(upcoming[0].date);
+    const readinessList = upcoming.map((e) => examReadiness(e, subjectById.get(e.subjectId)).pct);
+    const avgReadiness = Math.round(
+      readinessList.reduce((sum, p) => sum + p, 0) / (readinessList.length || 1)
+    );
+    return {
+      nextDays,
+      avgReadiness,
+      totalUpcoming: upcoming.length,
+    };
+  }, [upcoming, subjectById]);
+
   const openNew = () => {
     if (state.subjects.length === 0) {
       setAddingSubject(true);
@@ -85,7 +99,7 @@ export function ExamBoard() {
     <>
       {header}
 
-      <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {state.subjects.length === 0 ? (
           <EmptyState
             title="ยังไม่มีวิชา"
@@ -113,6 +127,45 @@ export function ExamBoard() {
           />
         ) : (
           <>
+            {/* Quick summary stats strip */}
+            {stats && (
+              <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <div>
+                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">การสอบถัดไป</dt>
+                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                      {stats.nextDays === 0 ? "วันนี้" : `อีก ${stats.nextDays} วัน`}
+                    </dd>
+                  </div>
+                  <span className="rounded-full border border-mustard/35 bg-mustard-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-mustard-deep">
+                    Next Exam
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <div>
+                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">ความพร้อมเฉลี่ย</dt>
+                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                      {stats.avgReadiness}%
+                    </dd>
+                  </div>
+                  <span className="rounded-full border border-sage/25 bg-sage-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-sage-deep">
+                    Readiness
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <div>
+                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">การสอบที่รออยู่</dt>
+                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                      {stats.totalUpcoming} วิชา
+                    </dd>
+                  </div>
+                  <span className="rounded-full border border-terracotta/25 bg-terracotta-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-terracotta-deep">
+                    Upcoming
+                  </span>
+                </div>
+              </dl>
+            )}
+
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-ink-soft">
                 กำลังจะมาถึง · <span className="font-mono text-ink">{upcoming.length}</span> รายการ
@@ -123,7 +176,7 @@ export function ExamBoard() {
                 ไม่มีการสอบที่กำลังจะมาถึง 🎉
               </p>
             ) : (
-              <ol className="space-y-4">
+              <ol className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 {upcoming.map((e) => (
                   <ExamRow
                     key={e.id}
@@ -143,7 +196,7 @@ export function ExamBoard() {
                 <summary className="cursor-pointer text-sm font-semibold text-ink-muted hover:text-ink">
                   สอบไปแล้ว · {past.length} รายการ
                 </summary>
-                <ol className="mt-4 space-y-4 opacity-75">
+                <ol className="mt-4 grid grid-cols-1 gap-4 opacity-75 lg:grid-cols-2">
                   {past.map((e) => (
                     <ExamRow
                       key={e.id}

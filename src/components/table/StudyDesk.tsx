@@ -238,9 +238,31 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
         </div>
       </div>
 
-      <ul className="max-h-80 overflow-y-auto border-t border-line">
+      {/* Quick Add Chapter moved to top for instant access */}
+      <form
+        className="flex gap-2 border-t border-line bg-paper/60 px-5 py-2.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          addChapter();
+        }}
+      >
+        <input
+          className={cn(inputClass, "h-9 bg-sheet text-sm placeholder:text-ink-muted/70")}
+          placeholder="+ เพิ่มบทเรียนใหม่ในวิชานี้..."
+          value={newChapter}
+          onChange={(e) => setNewChapter(e.target.value)}
+          aria-label={`เพิ่มบทเรียนในวิชา ${subject.name}`}
+        />
+        <Button type="submit" size="sm" variant="outline" disabled={!newChapter.trim()}>
+          <Plus className="h-4 w-4" /> เพิ่ม
+        </Button>
+      </form>
+
+      <ul className="max-h-96 overflow-y-auto overscroll-contain border-t border-line">
         {subject.chapters.length === 0 && (
-          <li className="px-5 py-4 text-sm text-ink-muted">ยังไม่มีบทเรียน เพิ่มบทแรกด้านล่างได้เลย</li>
+          <li className="px-5 py-6 text-center text-sm text-ink-muted">
+            ยังไม่มีบทเรียน พิมพ์ชื่อบทเรียนด้านบนเพื่อเริ่มบันทึก
+          </li>
         )}
         {subject.chapters.map((c, i) => (
           <li
@@ -313,25 +335,6 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
           </li>
         ))}
       </ul>
-
-      <form
-        className="flex gap-2 border-t border-line bg-paper px-5 py-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          addChapter();
-        }}
-      >
-        <input
-          className={cn(inputClass, "h-9")}
-          placeholder="เพิ่มบทเรียน เช่น บทที่ 5 · ปริพันธ์"
-          value={newChapter}
-          onChange={(e) => setNewChapter(e.target.value)}
-          aria-label={`เพิ่มบทเรียนในวิชา ${subject.name}`}
-        />
-        <Button type="submit" size="sm" variant="outline" disabled={!newChapter.trim()}>
-          <Plus className="h-4 w-4" /> เพิ่ม
-        </Button>
-      </form>
     </section>
   );
 }

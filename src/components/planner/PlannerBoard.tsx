@@ -134,21 +134,12 @@ export function PlannerBoard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSmartModalOpen(true)}
-                  className="border-mustard/40 bg-mustard-tint/40 text-mustard-deep hover:bg-mustard-tint"
-                >
-                  <Sparkles className="h-4 w-4 text-mustard" />
-                  จัดสรรเวลาอ่าน
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() =>
                     openNew(typeof mobileDay === "number" ? mobileDay : today, 9, "class")
                   }
                 >
                   <GraduationCap className="h-4 w-4 text-terracotta" />
-                  เพิ่มตารางเรียน
+                  + ตารางเรียน
                 </Button>
                 <Button
                   size="sm"
@@ -157,7 +148,7 @@ export function PlannerBoard() {
                   }
                 >
                   <BookOpen className="h-4 w-4" />
-                  เพิ่มตารางอ่าน
+                  + ตารางอ่าน
                 </Button>
               </>
             )}
