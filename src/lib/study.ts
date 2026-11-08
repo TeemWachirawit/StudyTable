@@ -16,6 +16,41 @@ export function formatHour(h: number): string {
   return `${String(h).padStart(2, "0")}:00`;
 }
 
+export function formatTime(h: number, m: number = 0): string {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+export function blockStartMinutes(b: StudyBlock): number {
+  return b.startHour * 60 + (b.startMinute ?? 0);
+}
+
+export function blockEndMinutes(b: StudyBlock): number {
+  if (b.endHour !== undefined && b.endHour !== null) {
+    return b.endHour * 60 + (b.endMinute ?? 0);
+  }
+  return Math.round(blockStartMinutes(b) + b.duration * 60);
+}
+
+export function blockDurationMinutes(b: StudyBlock): number {
+  return Math.max(1, blockEndMinutes(b) - blockStartMinutes(b));
+}
+
+export function formatBlockTime(b: StudyBlock): string {
+  const startM = b.startMinute ?? 0;
+  const endTotal = blockEndMinutes(b);
+  const endH = Math.floor(endTotal / 60);
+  const endM = endTotal % 60;
+  return `${formatTime(b.startHour, startM)}–${formatTime(endH, endM)}`;
+}
+
+export function formatDuration(durationMinutes: number): string {
+  const hours = Math.floor(durationMinutes / 60);
+  const mins = durationMinutes % 60;
+  if (hours > 0 && mins > 0) return `${hours} ชม. ${mins} นาที`;
+  if (hours > 0) return `${hours} ชม.`;
+  return `${mins} นาที`;
+}
+
 /** Monday-based weekday index (0 = Monday) for a Date. */
 export function weekdayIndex(d: Date): number {
   return (d.getDay() + 6) % 7;
@@ -52,13 +87,14 @@ export function subjectProgress(subject: Subject): { done: number; total: number
 
 /** Returns the first block that overlaps `candidate` on the same day, ignoring itself. */
 export function findConflict(blocks: StudyBlock[], candidate: StudyBlock): StudyBlock | undefined {
-  const end = candidate.startHour + candidate.duration;
+  const candStart = blockStartMinutes(candidate);
+  const candEnd = blockEndMinutes(candidate);
   return blocks.find(
     (b) =>
       b.id !== candidate.id &&
       b.day === candidate.day &&
-      b.startHour < end &&
-      candidate.startHour < b.startHour + b.duration
+      blockStartMinutes(b) < candEnd &&
+      candStart < blockEndMinutes(b)
   );
 }
 

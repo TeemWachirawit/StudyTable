@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  blockDurationMinutes,
   daysUntil,
   examReadiness,
   findConflict,
+  formatBlockTime,
+  formatDuration,
   isClassBlock,
   isStudyBlock,
   suggestStudyBlocks,
@@ -92,6 +95,50 @@ describe("findConflict", () => {
     };
     expect(findConflict(existing, adjacent)).toBeUndefined();
     expect(findConflict(existing, existing[0])).toBeUndefined();
+  });
+
+  it("handles minute-level overlap and adjacency correctly", () => {
+    const existingWithMinutes: StudyBlock[] = [
+      {
+        id: "bm1",
+        subjectId: "s1",
+        day: 1,
+        startHour: 8,
+        startMinute: 30,
+        endHour: 10,
+        endMinute: 0,
+        duration: 1.5,
+        topic: "Calculus",
+      },
+    ];
+
+    // Overlaps 09:30 - 11:00
+    const overlapping: StudyBlock = {
+      id: "bm2",
+      subjectId: "s2",
+      day: 1,
+      startHour: 9,
+      startMinute: 30,
+      endHour: 11,
+      endMinute: 0,
+      duration: 1.5,
+      topic: "Physics",
+    };
+    expect(findConflict(existingWithMinutes, overlapping)?.id).toBe("bm1");
+
+    // Exactly adjacent 10:00 - 11:30 (should NOT conflict)
+    const adjacent: StudyBlock = {
+      id: "bm3",
+      subjectId: "s2",
+      day: 1,
+      startHour: 10,
+      startMinute: 0,
+      endHour: 11,
+      endMinute: 30,
+      duration: 1.5,
+      topic: "Chemistry",
+    };
+    expect(findConflict(existingWithMinutes, adjacent)).toBeUndefined();
   });
 });
 
@@ -242,6 +289,30 @@ describe("security utilities", () => {
     const blocked = checkRateLimit(key, 2, 60_000);
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+  });
+});
+
+describe("time and duration formatters", () => {
+  it("formats block time with hours and minutes", () => {
+    const b: StudyBlock = {
+      id: "b1",
+      subjectId: "s1",
+      day: 0,
+      startHour: 8,
+      startMinute: 30,
+      endHour: 10,
+      endMinute: 15,
+      duration: 1.75,
+      topic: "",
+    };
+    expect(formatBlockTime(b)).toBe("08:30–10:15");
+  });
+
+  it("formats duration into Thai hours and minutes", () => {
+    expect(formatDuration(90)).toBe("1 ชม. 30 นาที");
+    expect(formatDuration(60)).toBe("1 ชม.");
+    expect(formatDuration(45)).toBe("45 นาที");
+    expect(formatDuration(150)).toBe("2 ชม. 30 นาที");
   });
 });
 

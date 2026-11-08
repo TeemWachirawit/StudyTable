@@ -23,7 +23,13 @@ export interface StudyBlock {
   day: number;
   /** Hour of day, e.g. 18 = 18:00 */
   startHour: number;
-  /** Length in whole hours */
+  /** Minute of start, e.g. 0, 15, 30, 45 (default 0) */
+  startMinute?: number;
+  /** End hour, e.g. 20 (optional, defaults to startHour + duration) */
+  endHour?: number;
+  /** End minute, e.g. 30 (default 0) */
+  endMinute?: number;
+  /** Length in hours (can be fractional, e.g. 1.5) */
   duration: number;
   topic: string;
   /** "class" = ตารางเรียน (lecture/lab), "study" = ตารางอ่านหนังสือ (self-study/revision) */

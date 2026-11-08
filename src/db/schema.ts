@@ -8,6 +8,7 @@ import {
   jsonb,
   primaryKey,
   foreignKey,
+  index,
 } from "drizzle-orm/pg-core";
 import type { SubjectColor } from "@/lib/colors";
 
@@ -24,6 +25,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+users.enableRLS();
 
 export const accounts = pgTable(
   "accounts",
@@ -48,6 +50,7 @@ export const accounts = pgTable(
     }),
   ]
 );
+accounts.enableRLS();
 
 export const sessions = pgTable("sessions", {
   sessionToken: text("session_token").primaryKey(),
@@ -56,6 +59,7 @@ export const sessions = pgTable("sessions", {
     .references(() => users.id, { onDelete: "cascade" }),
   expires: timestamp("expires", { mode: "date" }).notNull(),
 });
+sessions.enableRLS();
 
 export const verificationTokens = pgTable(
   "verification_tokens",
@@ -66,6 +70,7 @@ export const verificationTokens = pgTable(
   },
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
 );
+verificationTokens.enableRLS();
 
 /**
  * StudyTable Domain Tables (Subjects, Chapters, StudyBlocks, Exams)
@@ -83,7 +88,7 @@ export const subjects = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.id] })]
-);
+).enableRLS();
 
 export const chapters = pgTable(
   "chapters",
@@ -99,12 +104,13 @@ export const chapters = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.id] }),
+    index("chapters_user_id_subject_id_idx").on(t.userId, t.subjectId),
     foreignKey({
       columns: [t.userId, t.subjectId],
       foreignColumns: [subjects.userId, subjects.id],
     }).onDelete("cascade"),
   ]
-);
+).enableRLS();
 
 export const studyBlocks = pgTable(
   "study_blocks",
@@ -116,6 +122,9 @@ export const studyBlocks = pgTable(
     subjectId: text("subject_id").notNull(),
     day: integer("day").notNull(),
     startHour: integer("start_hour").notNull(),
+    startMinute: integer("start_minute").default(0).notNull(),
+    endHour: integer("end_hour"),
+    endMinute: integer("end_minute").default(0).notNull(),
     duration: integer("duration").notNull(),
     topic: text("topic").default("").notNull(),
     type: text("type").default("study").notNull(),
@@ -123,12 +132,13 @@ export const studyBlocks = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.id] }),
+    index("study_blocks_user_id_subject_id_idx").on(t.userId, t.subjectId),
     foreignKey({
       columns: [t.userId, t.subjectId],
       foreignColumns: [subjects.userId, subjects.id],
     }).onDelete("cascade"),
   ]
-);
+).enableRLS();
 
 export const exams = pgTable(
   "exams",
@@ -147,12 +157,13 @@ export const exams = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.id] }),
+    index("exams_user_id_subject_id_idx").on(t.userId, t.subjectId),
     foreignKey({
       columns: [t.userId, t.subjectId],
       foreignColumns: [subjects.userId, subjects.id],
     }).onDelete("cascade"),
   ]
-);
+).enableRLS();
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

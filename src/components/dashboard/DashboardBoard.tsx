@@ -23,8 +23,12 @@ import { getSubjectColor } from "@/lib/colors";
 import {
   DAYS,
   DAYS_SHORT,
+  blockDurationMinutes,
+  blockStartMinutes,
   daysUntil,
   examReadiness,
+  formatBlockTime,
+  formatDuration,
   formatHour,
   formatThaiDate,
   isClassBlock,
@@ -61,9 +65,9 @@ export function DashboardBoard() {
 
   // Analytics calculations
   const analytics = useMemo(() => {
-    const totalHours = state.blocks.reduce((sum, b) => sum + b.duration, 0);
-    const classHours = state.blocks.filter(isClassBlock).reduce((sum, b) => sum + b.duration, 0);
-    const studyHours = state.blocks.filter(isStudyBlock).reduce((sum, b) => sum + b.duration, 0);
+    const totalHours = Math.round(state.blocks.reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10;
+    const classHours = Math.round(state.blocks.filter(isClassBlock).reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10;
+    const studyHours = Math.round(state.blocks.filter(isStudyBlock).reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10;
     const allChapters = state.subjects.flatMap((s) => s.chapters);
     const doneChapters = allChapters.filter((c) => c.done).length;
     const overallPct = allChapters.length
@@ -72,7 +76,8 @@ export function DashboardBoard() {
 
     const hoursBySubject = new Map<string, number>();
     for (const b of state.blocks) {
-      hoursBySubject.set(b.subjectId, (hoursBySubject.get(b.subjectId) ?? 0) + b.duration);
+      const added = blockDurationMinutes(b) / 60;
+      hoursBySubject.set(b.subjectId, Math.round(((hoursBySubject.get(b.subjectId) ?? 0) + added) * 10) / 10);
     }
 
     const subjectStats = state.subjects.map((s) => {
@@ -94,9 +99,11 @@ export function DashboardBoard() {
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const hoursByDay = DAYS.map((dayName, dayIdx) => {
-      const hours = state.blocks
-        .filter((b) => b.day === dayIdx)
-        .reduce((sum, b) => sum + b.duration, 0);
+      const hours = Math.round(
+        state.blocks
+          .filter((b) => b.day === dayIdx)
+          .reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10
+      ) / 10;
       return { dayName, dayIdx, hours };
     });
     const maxDayHours = Math.max(1, ...hoursByDay.map((d) => d.hours));
@@ -194,7 +201,7 @@ export function DashboardBoard() {
       if (blockTypeFilter === "study") return isStudyBlock(b);
       return true;
     })
-    .sort((a, b) => (a.day !== b.day ? a.day - b.day : a.startHour - b.startHour));
+    .sort((a, b) => (a.day !== b.day ? a.day - b.day : blockStartMinutes(a) - blockStartMinutes(b)));
 
   const sortedExams = [...state.exams].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -658,8 +665,7 @@ export function DashboardBoard() {
                               วัน{DAYS[block.day]}
                             </span>
                             <span className="font-mono text-xs font-semibold text-ink-soft">
-                              {formatHour(block.startHour)}–
-                              {formatHour(block.startHour + block.duration)} ({block.duration} ชม.)
+                              {formatBlockTime(block)} ({formatDuration(blockDurationMinutes(block))})
                             </span>
                             <span
                               className={cn(
@@ -836,9 +842,9 @@ export function DashboardBoard() {
             editingSubject === "new"
               ? undefined
               : () => {
-                  dispatch({ type: "deleteSubject", id: editingSubject.id });
-                  setEditingSubject(null);
-                }
+                dispatch({ type: "deleteSubject", id: editingSubject.id });
+                setEditingSubject(null);
+              }
           }
         />
       )}

@@ -39,16 +39,25 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
         done: c.done,
       })),
     })),
-    blocks: blockRows.map((b) => ({
-      id: b.id,
-      subjectId: b.subjectId,
-      day: b.day,
-      startHour: b.startHour,
-      duration: b.duration,
-      topic: b.topic,
-      type: (b.type as "study" | "class") || "study",
-      location: b.location || "",
-    })),
+    blocks: blockRows.map((b) => {
+      const sMin = b.startMinute ?? 0;
+      const eHour = b.endHour ?? (b.startHour + b.duration);
+      const eMin = b.endMinute ?? 0;
+      const durationHours = Math.round(((eHour * 60 + eMin) - (b.startHour * 60 + sMin)) / 6) / 10;
+      return {
+        id: b.id,
+        subjectId: b.subjectId,
+        day: b.day,
+        startHour: b.startHour,
+        startMinute: sMin,
+        endHour: eHour,
+        endMinute: eMin,
+        duration: durationHours > 0 ? durationHours : b.duration,
+        topic: b.topic,
+        type: (b.type as "study" | "class") || "study",
+        location: b.location || "",
+      };
+    }),
     exams: examRows.map((e) => ({
       id: e.id,
       subjectId: e.subjectId,
@@ -100,17 +109,27 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
 
     if (state.blocks.length > 0) {
       await tx.insert(studyBlocks).values(
-        state.blocks.map((b) => ({
-          id: b.id,
-          userId,
-          subjectId: b.subjectId,
-          day: b.day,
-          startHour: b.startHour,
-          duration: b.duration,
-          topic: b.topic ?? "",
-          type: b.type ?? "study",
-          location: b.location ?? "",
-        }))
+        state.blocks.map((b) => {
+          const sMin = b.startMinute ?? 0;
+          const eHour = b.endHour ?? (b.startHour + Math.ceil(b.duration));
+          const eMin = b.endMinute ?? 0;
+          const totalMins = (eHour * 60 + eMin) - (b.startHour * 60 + sMin);
+          const wholeHours = Math.max(1, Math.round(totalMins / 60));
+          return {
+            id: b.id,
+            userId,
+            subjectId: b.subjectId,
+            day: b.day,
+            startHour: b.startHour,
+            startMinute: sMin,
+            endHour: eHour,
+            endMinute: eMin,
+            duration: wholeHours,
+            topic: b.topic ?? "",
+            type: b.type ?? "study",
+            location: b.location ?? "",
+          };
+        })
       );
     }
 

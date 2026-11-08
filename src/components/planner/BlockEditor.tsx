@@ -5,7 +5,16 @@ import { BookOpen, Check, GraduationCap, MapPin, Sparkles, Trash2 } from "lucide
 import { Modal } from "@/components/ui/modal";
 import { Field, inputClass } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
-import { DAYS, FIRST_HOUR, LAST_HOUR, findConflict, formatHour, uid } from "@/lib/study";
+import {
+  DAYS,
+  FIRST_HOUR,
+  LAST_HOUR,
+  findConflict,
+  formatBlockTime,
+  formatDuration,
+  formatHour,
+  uid,
+} from "@/lib/study";
 import { cn } from "@/lib/utils";
 import type { StudyBlock, Subject } from "@/types/study";
 
@@ -19,11 +28,32 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
+const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+
+function minuteOptions(current: number) {
+  if (MINUTES.includes(current)) return MINUTES;
+  return [...MINUTES, current].sort((a, b) => a - b);
+}
+
 export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, onDelete }: Props) {
-  const [form, setForm] = useState<StudyBlock>({
-    ...draft,
-    type: draft.type ?? "study",
-    location: draft.location ?? "",
+  const [form, setForm] = useState<StudyBlock>(() => {
+    const sMin = draft.startMinute ?? 0;
+    const defaultDurationMins = Math.round((draft.duration || 1) * 60);
+    const endTotal =
+      draft.endHour !== undefined
+        ? draft.endHour * 60 + (draft.endMinute ?? 0)
+        : draft.startHour * 60 + sMin + defaultDurationMins;
+    const eHour = Math.min(LAST_HOUR, Math.floor(endTotal / 60));
+    const eMin = eHour === LAST_HOUR ? 0 : endTotal % 60;
+    return {
+      ...draft,
+      startMinute: sMin,
+      endHour: eHour,
+      endMinute: eMin,
+      duration: Math.round(((eHour * 60 + eMin) - (draft.startHour * 60 + sMin)) / 6) / 10,
+      type: draft.type ?? "study",
+      location: draft.location ?? "",
+    };
   });
   const [autoAddStudy, setAutoAddStudy] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -32,16 +62,65 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
     setForm((f) => ({ ...f, [key]: value }));
 
   const subject = subjects.find((s) => s.id === form.subjectId);
-  const overflow = form.startHour + form.duration > LAST_HOUR;
+
+  const startMinute = form.startMinute ?? 0;
+  const endHour = form.endHour ?? Math.min(LAST_HOUR, form.startHour + 1);
+  const endMinute = form.endMinute ?? 0;
+
+  const startTotalMins = form.startHour * 60 + startMinute;
+  const endTotalMins = endHour * 60 + endMinute;
+  const durationMinutes = endTotalMins - startTotalMins;
+
+  const handleStartChange = (newHour: number, newMin: number) => {
+    const newStartTotal = newHour * 60 + newMin;
+    const prevDuration = Math.max(30, durationMinutes > 0 ? durationMinutes : 60);
+    let newEndTotal = newStartTotal + prevDuration;
+    if (newEndTotal > LAST_HOUR * 60) {
+      newEndTotal = LAST_HOUR * 60;
+    }
+    const newEndH = Math.floor(newEndTotal / 60);
+    const newEndM = newEndH === LAST_HOUR ? 0 : newEndTotal % 60;
+    const finalDuration = Math.round((newEndTotal - newStartTotal) / 6) / 10;
+
+    setForm((f) => ({
+      ...f,
+      startHour: newHour,
+      startMinute: newMin,
+      endHour: newEndH,
+      endMinute: newEndM,
+      duration: Math.max(0.1, finalDuration),
+    }));
+  };
+
+  const handleEndChange = (newHour: number, newMin: number) => {
+    const finalMin = newHour === LAST_HOUR ? 0 : newMin;
+    const newEndTotal = newHour * 60 + finalMin;
+    const finalDuration = Math.round((newEndTotal - startTotalMins) / 6) / 10;
+    setForm((f) => ({
+      ...f,
+      endHour: newHour,
+      endMinute: finalMin,
+      duration: Math.max(0.1, finalDuration),
+    }));
+  };
+
+  const invalidTime = endTotalMins <= startTotalMins;
+  const overflow = endTotalMins > LAST_HOUR * 60 || startTotalMins < FIRST_HOUR * 60;
   const conflict = findConflict(blocks, form);
   const conflictSubject = conflict && subjects.find((s) => s.id === conflict.subjectId);
-  const error = overflow
-    ? `ช่วงเวลาเกิน ${formatHour(LAST_HOUR)} กรุณาลดระยะเวลาหรือเลือกเวลาเริ่มให้เร็วขึ้น`
-    : conflict
-      ? `ชนกับ ${conflictSubject?.name ?? "ช่วงอื่น"} (${formatHour(conflict.startHour)}–${formatHour(conflict.startHour + conflict.duration)}) ในวันเดียวกัน`
-      : null;
+  const error = invalidTime
+    ? "เวลาจบต้องอยู่หลังเวลาเริ่ม"
+    : overflow
+      ? `ช่วงเวลาต้องอยู่ระหว่าง ${formatHour(FIRST_HOUR)} ถึง ${formatHour(LAST_HOUR)}`
+      : conflict
+        ? `ชนกับ ${conflictSubject?.name ?? "ช่วงอื่น"} (${formatBlockTime(conflict)}) ในวันเดียวกัน`
+        : null;
 
-  const startOptions = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
+  const startHours = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
+  const endHours = Array.from(
+    { length: LAST_HOUR - form.startHour + 1 },
+    (_, i) => form.startHour + i
+  );
 
   // Compute recommended follow-up review slot after class
   const followUpCandidate = useMemo(() => {
@@ -261,7 +340,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
         </Field>
 
         {/* Time & Day Selectors */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="วัน" htmlFor="block-day">
             <select
               id="block-day"
@@ -276,33 +355,82 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
               ))}
             </select>
           </Field>
-          <Field label="เริ่ม" htmlFor="block-start">
-            <select
-              id="block-start"
-              className={inputClass}
-              value={form.startHour}
-              onChange={(e) => set("startHour", Number(e.target.value))}
-            >
-              {startOptions.map((h) => (
-                <option key={h} value={h}>
-                  {formatHour(h)}
-                </option>
-              ))}
-            </select>
+
+          <Field label="เวลาเริ่ม" htmlFor="block-start-hour">
+            <div className="grid grid-cols-2 gap-1.5">
+              <select
+                id="block-start-hour"
+                className={inputClass}
+                value={form.startHour}
+                onChange={(e) => handleStartChange(Number(e.target.value), startMinute)}
+              >
+                {startHours.map((h) => (
+                  <option key={h} value={h}>
+                    {String(h).padStart(2, "0")} น.
+                  </option>
+                ))}
+              </select>
+              <select
+                id="block-start-minute"
+                aria-label="นาทีเริ่ม"
+                className={inputClass}
+                value={startMinute}
+                onChange={(e) => handleStartChange(form.startHour, Number(e.target.value))}
+              >
+                {minuteOptions(startMinute).map((m) => (
+                  <option key={m} value={m}>
+                    :{String(m).padStart(2, "0")} น.
+                  </option>
+                ))}
+              </select>
+            </div>
           </Field>
-          <Field label="ระยะเวลา" htmlFor="block-duration">
-            <select
-              id="block-duration"
-              className={inputClass}
-              value={form.duration}
-              onChange={(e) => set("duration", Number(e.target.value))}
-            >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n} ชม.
-                </option>
-              ))}
-            </select>
+
+          <Field
+            label={
+              <span className="flex items-center justify-between">
+                <span>เวลาจบ</span>
+                {durationMinutes > 0 && (
+                  <span className="text-[11px] font-normal text-ink-muted">
+                    ({formatDuration(durationMinutes)})
+                  </span>
+                )}
+              </span>
+            }
+            htmlFor="block-end-hour"
+          >
+            <div className="grid grid-cols-2 gap-1.5">
+              <select
+                id="block-end-hour"
+                className={inputClass}
+                value={endHour}
+                onChange={(e) => handleEndChange(Number(e.target.value), endMinute)}
+              >
+                {endHours.map((h) => (
+                  <option key={h} value={h}>
+                    {String(h).padStart(2, "0")} น.
+                  </option>
+                ))}
+              </select>
+              <select
+                id="block-end-minute"
+                aria-label="นาทีจบ"
+                className={inputClass}
+                value={endMinute}
+                disabled={endHour === LAST_HOUR}
+                onChange={(e) => handleEndChange(endHour, Number(e.target.value))}
+              >
+                {endHour === LAST_HOUR ? (
+                  <option value={0}>:00 น.</option>
+                ) : (
+                  minuteOptions(endMinute).map((m) => (
+                    <option key={m} value={m}>
+                      :{String(m).padStart(2, "0")} น.
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </Field>
         </div>
 
@@ -324,7 +452,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
                 <p className="text-ink-soft leading-normal">
                   จัดสรรเวลาทบทวนวิชานี้อัตโนมัติในวันเดียวกัน ช่วงเวลา{" "}
                   <strong className="text-ink">
-                    {formatHour(followUpCandidate.startHour)}–{formatHour(followUpCandidate.startHour + followUpCandidate.duration)}
+                    {formatBlockTime(followUpCandidate)}
                   </strong>{" "}
                   (1 ชม.)
                 </p>

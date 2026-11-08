@@ -19,7 +19,12 @@ import {
   DAYS_SHORT,
   FIRST_HOUR,
   LAST_HOUR,
+  blockDurationMinutes,
+  blockEndMinutes,
+  blockStartMinutes,
+  formatBlockTime,
   formatHour,
+  formatTime,
   isClassBlock,
   isStudyBlock,
   uid,
@@ -56,14 +61,14 @@ export function PlannerBoard() {
   const studyBlocksList = useMemo(() => state.blocks.filter(isStudyBlock), [state.blocks]);
 
   const classHours = useMemo(
-    () => classBlocks.reduce((sum, b) => sum + b.duration, 0),
+    () => Math.round(classBlocks.reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10,
     [classBlocks]
   );
   const studyHours = useMemo(
-    () => studyBlocksList.reduce((sum, b) => sum + b.duration, 0),
+    () => Math.round(studyBlocksList.reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10,
     [studyBlocksList]
   );
-  const totalHours = state.blocks.reduce((sum, b) => sum + b.duration, 0);
+  const totalHours = Math.round(state.blocks.reduce((sum, b) => sum + blockDurationMinutes(b) / 60, 0) * 10) / 10;
 
   const displayedBlocks = useMemo(() => {
     if (filterType === "class") return classBlocks;
@@ -74,7 +79,8 @@ export function PlannerBoard() {
   const hoursBySubject = useMemo(() => {
     const totals = new Map<string, number>();
     for (const b of displayedBlocks) {
-      totals.set(b.subjectId, (totals.get(b.subjectId) ?? 0) + b.duration);
+      const added = blockDurationMinutes(b) / 60;
+      totals.set(b.subjectId, Math.round(((totals.get(b.subjectId) ?? 0) + added) * 10) / 10);
     }
     return totals;
   }, [displayedBlocks]);
@@ -409,65 +415,78 @@ export function PlannerBoard() {
                   </button>
                 </div>
               ))}
-              {displayedBlocks
-                .filter((b) => b.day === visibleDays[0].index)
-                .map((b) => {
-                  const subject = subjectById.get(b.subjectId);
-                  if (!subject) return null;
-                  const sc = getSubjectColor(subject.color);
-                  const startRow = b.startHour - FIRST_HOUR + 1;
-                  const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
-                  const isClass = isClassBlock(b);
+              <div
+                className="pointer-events-none relative"
+                style={{
+                  gridColumn: 2,
+                  gridRow: `1 / span ${HOURS.length}`,
+                }}
+              >
+                {displayedBlocks
+                  .filter((b) => b.day === visibleDays[0].index)
+                  .map((b) => {
+                    const subject = subjectById.get(b.subjectId);
+                    if (!subject) return null;
+                    const sc = getSubjectColor(subject.color);
+                    const startM = blockStartMinutes(b);
+                    const endM = blockEndMinutes(b);
+                    const topRem = ((startM - FIRST_HOUR * 60) / 60) * ROW_REM;
+                    const heightRem = ((endM - startM) / 60) * ROW_REM;
+                    const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
+                    const isClass = isClassBlock(b);
 
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setDraft(b)}
-                      className={cn(
-                        "z-[5] m-[3px] flex flex-col overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
-                        isClass && "ring-1 ring-terracotta/25 shadow-2xs",
-                        sc.blockClass
-                      )}
-                      style={{
-                        ...sc.blockStyle,
-                        gridColumn: 2,
-                        gridRow: `${startRow} / span ${b.duration}`,
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-1.5">
-                        <span className="truncate font-semibold">{subject.name}</span>
-                        <span
-                          className={cn(
-                            "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0",
-                            isClass
-                              ? "bg-terracotta/25 text-terracotta-deep"
-                              : "bg-sage/25 text-sage-deep"
-                          )}
-                        >
-                          {isClass ? "เรียน" : "อ่าน"}
-                        </span>
-                      </div>
-                      {isClass && b.location && (
-                        <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{b.location}</span>
-                        </span>
-                      )}
-                      {b.topic && (
-                        <span className="mt-0.5 inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
-                          {!isClass && chapterDone && (
-                            <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
-                          )}
-                          <span className="truncate">{b.topic}</span>
-                        </span>
-                      )}
-                      <span className="mt-auto font-mono text-[10px] opacity-75">
-                        {formatHour(b.startHour)}–{formatHour(b.startHour + b.duration)}
-                      </span>
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setDraft(b)}
+                        className={cn(
+                          "pointer-events-auto absolute inset-x-[3px] z-[5] flex flex-col overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
+                          isClass && "ring-1 ring-terracotta/25 shadow-2xs",
+                          sc.blockClass
+                        )}
+                        style={{
+                          ...sc.blockStyle,
+                          top: `${topRem}rem`,
+                          height: `calc(${heightRem}rem - 6px)`,
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="truncate font-semibold">{subject.name}</span>
+                          <span
+                            className={cn(
+                              "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0",
+                              isClass
+                                ? "bg-terracotta/25 text-terracotta-deep"
+                                : "bg-sage/25 text-sage-deep"
+                            )}
+                          >
+                            {isClass ? "เรียน" : "อ่าน"}
+                          </span>
+                        </div>
+                        {isClass && b.location && (
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{b.location}</span>
+                          </span>
+                        )}
+                        {b.topic && (
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
+                            {!isClass && chapterDone && (
+                              <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
+                            )}
+                            <span className="truncate">{b.topic}</span>
+                          </span>
+                        )}
+                        {heightRem >= 2.5 && (
+                          <span className="mt-auto font-mono text-[10px] opacity-75">
+                            {formatBlockTime(b)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         )}
@@ -550,69 +569,85 @@ export function PlannerBoard() {
             ))}
 
             {/* Timetable blocks */}
-            {displayedBlocks.map((b) => {
-              const subject = subjectById.get(b.subjectId);
-              if (!subject) return null;
-              const sc = getSubjectColor(subject.color);
-              const startRow = b.startHour - FIRST_HOUR + 2;
-              const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
-              const isClass = isClassBlock(b);
+            {DAYS.map((_, i) => (
+              <div
+                key={`day-overlay-${i}`}
+                className="pointer-events-none relative"
+                style={{
+                  gridColumn: i + 2,
+                  gridRow: `2 / span ${HOURS.length}`,
+                }}
+              >
+                {displayedBlocks
+                  .filter((b) => b.day === i)
+                  .map((b) => {
+                    const subject = subjectById.get(b.subjectId);
+                    if (!subject) return null;
+                    const sc = getSubjectColor(subject.color);
+                    const startM = blockStartMinutes(b);
+                    const endM = blockEndMinutes(b);
+                    const topRem = ((startM - FIRST_HOUR * 60) / 60) * ROW_REM;
+                    const heightRem = ((endM - startM) / 60) * ROW_REM;
+                    const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
+                    const isClass = isClassBlock(b);
 
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setDraft(b)}
-                  className={cn(
-                    "z-[5] m-[3px] flex flex-col overflow-hidden rounded-lg border px-2.5 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
-                    isClass && "ring-1 ring-terracotta/30 shadow-2xs",
-                    sc.blockClass
-                  )}
-                  style={{
-                    ...sc.blockStyle,
-                    gridColumn: b.day + 2,
-                    gridRow: `${startRow} / span ${b.duration}`,
-                  }}
-                  aria-label={`${isClass ? "คาบเรียน" : "ช่วงอ่าน"} ${subject.name} ${b.topic} วัน${DAYS[b.day]} ${formatHour(b.startHour)}–${formatHour(b.startHour + b.duration)}`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="truncate font-semibold">{subject.name}</span>
-                    <span
-                      className={cn(
-                        "rounded px-1 py-0.2 text-[9px] font-bold uppercase shrink-0",
-                        isClass
-                          ? "bg-terracotta/25 text-terracotta-deep"
-                          : "bg-sage/25 text-sage-deep"
-                      )}
-                    >
-                      {isClass ? "เรียน" : "อ่าน"}
-                    </span>
-                  </div>
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setDraft(b)}
+                        className={cn(
+                          "pointer-events-auto absolute inset-x-[3px] z-[5] flex flex-col overflow-hidden rounded-lg border px-2.5 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
+                          isClass && "ring-1 ring-terracotta/30 shadow-2xs",
+                          sc.blockClass
+                        )}
+                        style={{
+                          ...sc.blockStyle,
+                          top: `${topRem}rem`,
+                          height: `calc(${heightRem}rem - 6px)`,
+                        }}
+                        aria-label={`${isClass ? "คาบเรียน" : "ช่วงอ่าน"} ${subject.name} ${b.topic} วัน${DAYS[b.day]} ${formatBlockTime(b)}`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="truncate font-semibold">{subject.name}</span>
+                          <span
+                            className={cn(
+                              "rounded px-1 py-0.2 text-[9px] font-bold uppercase shrink-0",
+                              isClass
+                                ? "bg-terracotta/25 text-terracotta-deep"
+                                : "bg-sage/25 text-sage-deep"
+                            )}
+                          >
+                            {isClass ? "เรียน" : "อ่าน"}
+                          </span>
+                        </div>
 
-                  {isClass && b.location && (
-                    <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{b.location}</span>
-                    </span>
-                  )}
+                        {isClass && b.location && (
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{b.location}</span>
+                          </span>
+                        )}
 
-                  {b.topic && (
-                    <span className="inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
-                      {!isClass && chapterDone && (
-                        <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
-                      )}
-                      <span className="truncate">{b.topic}</span>
-                    </span>
-                  )}
+                        {b.topic && (
+                          <span className="inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
+                            {!isClass && chapterDone && (
+                              <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
+                            )}
+                            <span className="truncate">{b.topic}</span>
+                          </span>
+                        )}
 
-                  {b.duration > 1 && (
-                    <span className="mt-auto font-mono text-[10px] opacity-75">
-                      {formatHour(b.startHour)}–{formatHour(b.startHour + b.duration)}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                        {heightRem >= 2.5 && (
+                          <span className="mt-auto font-mono text-[10px] opacity-75">
+                            {formatBlockTime(b)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
+            ))}
           </div>
         </div>
 

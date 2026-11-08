@@ -78,10 +78,19 @@ function isValidStudyState(state: unknown): state is StudyState {
       !Number.isInteger(b.startHour) ||
       b.startHour < FIRST_HOUR ||
       b.startHour >= LAST_HOUR ||
+      (b.startMinute !== undefined &&
+        (typeof b.startMinute !== "number" || !Number.isInteger(b.startMinute) || b.startMinute < 0 || b.startMinute > 59)) ||
+      (b.endHour !== undefined &&
+        (typeof b.endHour !== "number" || !Number.isInteger(b.endHour) || b.endHour < FIRST_HOUR || b.endHour > LAST_HOUR)) ||
+      (b.endMinute !== undefined &&
+        (typeof b.endMinute !== "number" || !Number.isInteger(b.endMinute) || b.endMinute < 0 || b.endMinute > 59)) ||
       typeof b.duration !== "number" ||
-      !Number.isInteger(b.duration) ||
-      b.duration < 1 ||
-      b.startHour + b.duration > LAST_HOUR ||
+      isNaN(b.duration) ||
+      b.duration <= 0 ||
+      (b.endHour !== undefined
+        ? b.endHour * 60 + (b.endMinute ?? 0) > LAST_HOUR * 60 ||
+          b.endHour * 60 + (b.endMinute ?? 0) <= b.startHour * 60 + (b.startMinute ?? 0)
+        : b.startHour + b.duration > LAST_HOUR) ||
       (b.topic !== undefined && (typeof b.topic !== "string" || b.topic.length > 200)) ||
       (b.type !== undefined && b.type !== "study" && b.type !== "class") ||
       (b.location !== undefined && (typeof b.location !== "string" || b.location.length > 200))
