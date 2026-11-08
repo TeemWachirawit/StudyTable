@@ -28,11 +28,17 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+function toTimeString(hour: number, minute: number = 0): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
 
-function minuteOptions(current: number) {
-  if (MINUTES.includes(current)) return MINUTES;
-  return [...MINUTES, current].sort((a, b) => a - b);
+function parseTimeString(timeStr: string): { hour: number; minute: number } | null {
+  if (!timeStr) return null;
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return null;
+  return { hour: h, minute: m };
 }
 
 export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, onDelete }: Props) {
@@ -104,6 +110,31 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
     }));
   };
 
+  const handleStartTimeInput = (value: string) => {
+    const parsed = parseTimeString(value);
+    if (!parsed) return;
+    handleStartChange(parsed.hour, parsed.minute);
+  };
+
+  const handleEndTimeInput = (value: string) => {
+    const parsed = parseTimeString(value);
+    if (!parsed) return;
+    handleEndChange(parsed.hour, parsed.minute);
+  };
+
+  const setDurationHours = (hours: number) => {
+    const newEndTotal = Math.min(LAST_HOUR * 60, startTotalMins + Math.round(hours * 60));
+    const newEndH = Math.floor(newEndTotal / 60);
+    const newEndM = newEndH === LAST_HOUR ? 0 : newEndTotal % 60;
+    const finalDuration = Math.round((newEndTotal - startTotalMins) / 6) / 10;
+    setForm((f) => ({
+      ...f,
+      endHour: newEndH,
+      endMinute: newEndM,
+      duration: Math.max(0.1, finalDuration),
+    }));
+  };
+
   const invalidTime = endTotalMins <= startTotalMins;
   const overflow = endTotalMins > LAST_HOUR * 60 || startTotalMins < FIRST_HOUR * 60;
   const conflict = findConflict(blocks, form);
@@ -115,12 +146,6 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
       : conflict
         ? `ชนกับ ${conflictSubject?.name ?? "ช่วงอื่น"} (${formatBlockTime(conflict)}) ในวันเดียวกัน`
         : null;
-
-  const startHours = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
-  const endHours = Array.from(
-    { length: LAST_HOUR - form.startHour + 1 },
-    (_, i) => form.startHour + i
-  );
 
   // Compute recommended follow-up review slot after class
   const followUpCandidate = useMemo(() => {
@@ -356,34 +381,14 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
             </select>
           </Field>
 
-          <Field label="เวลาเริ่ม" htmlFor="block-start-hour">
-            <div className="grid grid-cols-2 gap-1.5">
-              <select
-                id="block-start-hour"
-                className={inputClass}
-                value={form.startHour}
-                onChange={(e) => handleStartChange(Number(e.target.value), startMinute)}
-              >
-                {startHours.map((h) => (
-                  <option key={h} value={h}>
-                    {String(h).padStart(2, "0")} น.
-                  </option>
-                ))}
-              </select>
-              <select
-                id="block-start-minute"
-                aria-label="นาทีเริ่ม"
-                className={inputClass}
-                value={startMinute}
-                onChange={(e) => handleStartChange(form.startHour, Number(e.target.value))}
-              >
-                {minuteOptions(startMinute).map((m) => (
-                  <option key={m} value={m}>
-                    :{String(m).padStart(2, "0")} น.
-                  </option>
-                ))}
-              </select>
-            </div>
+          <Field label="เวลาเริ่ม" htmlFor="block-start-time">
+            <input
+              id="block-start-time"
+              type="time"
+              className={cn(inputClass, "font-mono text-sm")}
+              value={toTimeString(form.startHour, startMinute)}
+              onChange={(e) => handleStartTimeInput(e.target.value)}
+            />
           </Field>
 
           <Field
@@ -397,41 +402,44 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
                 )}
               </span>
             }
-            htmlFor="block-end-hour"
+            htmlFor="block-end-time"
           >
-            <div className="grid grid-cols-2 gap-1.5">
-              <select
-                id="block-end-hour"
-                className={inputClass}
-                value={endHour}
-                onChange={(e) => handleEndChange(Number(e.target.value), endMinute)}
-              >
-                {endHours.map((h) => (
-                  <option key={h} value={h}>
-                    {String(h).padStart(2, "0")} น.
-                  </option>
-                ))}
-              </select>
-              <select
-                id="block-end-minute"
-                aria-label="นาทีจบ"
-                className={inputClass}
-                value={endMinute}
-                disabled={endHour === LAST_HOUR}
-                onChange={(e) => handleEndChange(endHour, Number(e.target.value))}
-              >
-                {endHour === LAST_HOUR ? (
-                  <option value={0}>:00 น.</option>
-                ) : (
-                  minuteOptions(endMinute).map((m) => (
-                    <option key={m} value={m}>
-                      :{String(m).padStart(2, "0")} น.
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+            <input
+              id="block-end-time"
+              type="time"
+              className={cn(inputClass, "font-mono text-sm")}
+              value={toTimeString(endHour, endMinute)}
+              onChange={(e) => handleEndTimeInput(e.target.value)}
+            />
           </Field>
+        </div>
+
+        {/* Quick duration presets */}
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+          <span className="font-medium">เลือกระยะเวลาเร็ว:</span>
+          {[
+            { label: "1 ชม.", hours: 1 },
+            { label: "1.5 ชม.", hours: 1.5 },
+            { label: "2 ชม.", hours: 2 },
+            { label: "3 ชม.", hours: 3 },
+          ].map((preset) => {
+            const isSelected = Math.abs(durationMinutes - preset.hours * 60) < 2;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => setDurationHours(preset.hours)}
+                className={cn(
+                  "rounded-md border px-2.5 py-1 font-medium transition-colors",
+                  isSelected
+                    ? "border-terracotta bg-terracotta-tint font-semibold text-terracotta-deep"
+                    : "border-line bg-sheet text-ink-soft hover:bg-paper-deep hover:text-ink"
+                )}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Auto Add Study Review after class */}
