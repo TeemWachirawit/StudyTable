@@ -74,6 +74,10 @@ export function NavbarStatusOrCta() {
   const { data: session, status } = useSession();
   const { syncStatus } = useStudyStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOverride, setProfileOverride] = useState<{
+    name?: string | null;
+    image?: string | null;
+  } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,6 +91,41 @@ export function NavbarStatusOrCta() {
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      setProfileOverride(null);
+      return;
+    }
+
+    let cancelled = false;
+    fetch("/api/user/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.user) {
+          setProfileOverride({
+            name: data.user.name,
+            image: data.user.image,
+          });
+        }
+      })
+      .catch(() => {
+        /* ignore profile fetch errors */
+      });
+
+    function handleProfileUpdated(e: Event) {
+      const detail = (e as CustomEvent<{ name?: string | null; image?: string | null }>).detail;
+      if (detail) {
+        setProfileOverride({ name: detail.name, image: detail.image });
+      }
+    }
+
+    window.addEventListener("studytable:profile-updated", handleProfileUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("studytable:profile-updated", handleProfileUpdated);
+    };
+  }, [status]);
 
   if (status === "loading") {
     return <div className="h-9 w-24 animate-pulse rounded-lg bg-paper-deep" />;
@@ -110,6 +149,10 @@ export function NavbarStatusOrCta() {
       </div>
     );
   }
+
+  const displayName = profileOverride?.name || session.user.name;
+  const displayImage =
+    profileOverride?.image !== undefined ? profileOverride.image : session.user.image;
 
   return (
     <div className="flex shrink-0 items-center gap-2 text-xs font-medium">
@@ -135,17 +178,17 @@ export function NavbarStatusOrCta() {
           onClick={() => setMenuOpen((prev) => !prev)}
           className="inline-flex items-center gap-2 rounded-lg border border-line bg-paper py-1 pr-3 pl-1.5 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep"
         >
-          <UserAvatar image={session.user.image} name={session.user.name} size="sm" />
-          <span className="max-w-32 truncate">{session.user.name || session.user.email}</span>
+          <UserAvatar image={displayImage} name={displayName} size="sm" />
+          <span className="max-w-32 truncate">{displayName || session.user.email}</span>
         </button>
 
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-52 rounded-xl border border-line-strong bg-sheet p-1.5 shadow-md">
             <div className="flex items-center gap-2.5 border-b border-line px-2.5 py-2.5">
-              <UserAvatar image={session.user.image} name={session.user.name} size="md" />
+              <UserAvatar image={displayImage} name={displayName} size="md" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-ink">
-                  {session.user.name || "ผู้ใช้งาน"}
+                  {displayName || "ผู้ใช้งาน"}
                 </p>
                 {session.user.email && (
                   <p className="truncate text-[11px] text-ink-muted">{session.user.email}</p>
@@ -164,7 +207,16 @@ export function NavbarStatusOrCta() {
               </Link>
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => {
+                  try {
+                    if (session.user?.id) {
+                      localStorage.removeItem(`studytable:v1:${session.user.id}`);
+                    }
+                  } catch {
+                    /* ignore storage errors */
+                  }
+                  signOut({ callbackUrl: "/" });
+                }}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-slate-deep transition-colors hover:bg-slate-tint"
               >
                 <LogOut className="h-3.5 w-3.5 shrink-0" />

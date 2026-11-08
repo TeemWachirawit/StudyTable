@@ -3,7 +3,9 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db, isDatabaseConfigured } from "@/db";
 import { users } from "@/db/schema";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { isValidAvatarImage } from "@/lib/avatars";
+import { hashPassword, MAX_PASSWORD_LENGTH, verifyPassword } from "@/lib/password";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   const session = await auth();
@@ -53,6 +55,15 @@ export async function PATCH(request: Request) {
 
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const clientIp = getClientIp(request);
+  const rate = checkRateLimit(`profile:${userId}:${clientIp}`, 20, 15 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง" },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+    );
   }
 
   if (!isDatabaseConfigured() || !db) {
@@ -113,20 +124,18 @@ export async function PATCH(request: Request) {
         updates.image = null;
       } else if (typeof body.image === "string") {
         const trimmedImage = body.image.trim();
-        // Allow data URLs (up to 500KB) or HTTP/HTTPS URLs
         if (trimmedImage.length > 500_000) {
           return NextResponse.json(
             { error: "ขนาดรูปภาพโปรไฟล์ต้องไม่เกิน 500 KB" },
             { status: 400 }
           );
         }
-        if (
-          !trimmedImage.startsWith("data:image/") &&
-          !trimmedImage.startsWith("http://") &&
-          !trimmedImage.startsWith("https://")
-        ) {
+        if (!isValidAvatarImage(trimmedImage)) {
           return NextResponse.json(
-            { error: "รูปแบบรูปภาพไม่ถูกต้อง ต้องเป็น URL หรือรูปภาพที่อัปโหลด" },
+            {
+              error:
+                "รูปแบบรูปภาพไม่ถูกต้อง รองรับเฉพาะอวาตาร์ในระบบ รูปภาพ JPG/PNG/WebP/GIF หรือลิงก์ http/https",
+            },
             { status: 400 }
           );
         }
@@ -141,13 +150,23 @@ export async function PATCH(request: Request) {
 
     // 3. Validate & update Password (optional)
     if (body.newPassword !== undefined && body.newPassword !== "") {
-      if (typeof body.newPassword !== "string" || body.newPassword.length < 6) {
+      if (
+        typeof body.newPassword !== "string" ||
+        body.newPassword.length < 6 ||
+        body.newPassword.length > MAX_PASSWORD_LENGTH
+      ) {
         return NextResponse.json(
-          { error: "รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร" },
+          {
+            error: `รหัสผ่านใหม่ต้องมีความยาวระหว่าง 6 ถึง ${MAX_PASSWORD_LENGTH} ตัวอักษร`,
+          },
           { status: 400 }
         );
       }
-      if (typeof body.currentPassword !== "string" || !body.currentPassword) {
+      if (
+        typeof body.currentPassword !== "string" ||
+        !body.currentPassword ||
+        body.currentPassword.length > MAX_PASSWORD_LENGTH
+      ) {
         return NextResponse.json(
           { error: "กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนรหัสผ่าน" },
           { status: 400 }
@@ -194,3 +213,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
+

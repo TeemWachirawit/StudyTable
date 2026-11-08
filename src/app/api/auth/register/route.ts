@@ -4,10 +4,20 @@ import { db, isDatabaseConfigured } from "@/db";
 import { users } from "@/db/schema";
 import { saveUserStudyState } from "@/db/study-service";
 import { hashPassword, MAX_PASSWORD_LENGTH } from "@/lib/password";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createSeedState } from "@/lib/study";
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+    const rate = checkRateLimit(`register:${clientIp}`, 10, 15 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "สร้างบัญชีถี่เกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง" },
+        { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
+      );
+    }
+
     if (!isDatabaseConfigured() || !db) {
       return NextResponse.json(
         {

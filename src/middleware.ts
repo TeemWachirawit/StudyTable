@@ -12,6 +12,7 @@ export const config = {
     "/table/:path*",
     "/exam/:path*",
     "/dashboard/:path*",
+    "/settings/:path*",
     "/signin",
     "/signup",
   ],

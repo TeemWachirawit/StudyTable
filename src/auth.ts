@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { accounts, sessions, users, verificationTokens } from "@/db/schema";
 import { verifyPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { authConfig, getAuthSecret } from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -39,6 +40,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           typeof credentials?.password === "string" ? credentials.password : "";
 
         if (!email || !password || !db) {
+          return null;
+        }
+
+        const rate = checkRateLimit(`signin:${email}`, 15, 15 * 60 * 1000);
+        if (!rate.allowed) {
           return null;
         }
 

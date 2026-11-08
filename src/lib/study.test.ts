@@ -9,6 +9,9 @@ import {
   subjectProgress,
   weekdayIndex,
 } from "./study";
+import { isValidAvatarImage, PRESET_AVATARS } from "./avatars";
+import { hashPassword, verifyPassword } from "./password";
+import { checkRateLimit } from "./rate-limit";
 import type { Exam, StudyBlock, StudyState, Subject } from "@/types/study";
 
 describe("weekdayIndex", () => {
@@ -213,4 +216,33 @@ describe("suggestStudyBlocks", () => {
     }
   });
 });
+
+describe("security utilities", () => {
+  it("validates safe avatar images and rejects arbitrary SVG data URIs", () => {
+    expect(isValidAvatarImage(PRESET_AVATARS[0].url)).toBe(true);
+    expect(isValidAvatarImage("https://example.com/avatar.png")).toBe(true);
+    expect(isValidAvatarImage("data:image/jpeg;base64,/9j/4AAQSkZJRg==")).toBe(true);
+    expect(
+      isValidAvatarImage('data:image/svg+xml;utf8,<svg onload="alert(1)"></svg>')
+    ).toBe(false);
+    expect(isValidAvatarImage("javascript:alert(1)")).toBe(false);
+  });
+
+  it("hashes and verifies passwords safely while enforcing max length", async () => {
+    const hash = await hashPassword("secret123");
+    expect(await verifyPassword("secret123", hash)).toBe(true);
+    expect(await verifyPassword("wrongpass", hash)).toBe(false);
+    expect(await verifyPassword("a".repeat(200), hash)).toBe(false);
+  });
+
+  it("enforces rate limits per key", () => {
+    const key = `test-key-${Date.now()}`;
+    expect(checkRateLimit(key, 2, 60_000).allowed).toBe(true);
+    expect(checkRateLimit(key, 2, 60_000).allowed).toBe(true);
+    const blocked = checkRateLimit(key, 2, 60_000);
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterSeconds).toBeGreaterThan(0);
+  });
+});
+
 

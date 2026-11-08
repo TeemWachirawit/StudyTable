@@ -223,3 +223,32 @@ export const PRESET_AVATARS: AvatarPreset[] = [
     `),
   },
 ];
+
+const RASTER_DATA_URL_REGEX =
+  /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+
+export function isValidAvatarImage(image: string): boolean {
+  const trimmed = image.trim();
+  if (!trimmed || trimmed.length > 500_000) return false;
+
+  if (PRESET_AVATARS.some((preset) => preset.url === trimmed)) {
+    return true;
+  }
+
+  if (RASTER_DATA_URL_REGEX.test(trimmed)) {
+    return true;
+  }
+
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+

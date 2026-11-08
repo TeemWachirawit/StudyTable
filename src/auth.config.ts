@@ -2,6 +2,21 @@ import type { NextAuthConfig } from "next-auth";
 
 const protectedPaths = ["/planner", "/table", "/exam", "/dashboard", "/settings"];
 const authPaths = ["/signin", "/signup"];
+const MAX_COOKIE_IMAGE_LENGTH = 2048;
+
+function sanitizeCookieImage(image: unknown): string | null {
+  if (typeof image !== "string") return null;
+  const trimmed = image.trim();
+  if (!trimmed || trimmed.length > MAX_COOKIE_IMAGE_LENGTH) return null;
+  if (
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("data:image/")
+  ) {
+    return trimmed;
+  }
+  return null;
+}
 
 export function getAuthSecret(): string {
   const secret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)?.trim();
@@ -52,11 +67,19 @@ export const authConfig = {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.picture = user.image;
+        token.picture = sanitizeCookieImage(user.image);
       }
-      if (trigger === "update" && session) {
-        if (session.name !== undefined) token.name = session.name;
-        if (session.image !== undefined) token.picture = session.image;
+      if (trigger === "update" && session && typeof session === "object") {
+        const s = session as { name?: unknown; image?: unknown };
+        if (typeof s.name === "string") {
+          const trimmedName = s.name.trim();
+          if (trimmedName.length > 0 && trimmedName.length <= 60) {
+            token.name = trimmedName;
+          }
+        }
+        if (s.image !== undefined) {
+          token.picture = sanitizeCookieImage(s.image);
+        }
       }
       return token;
     },
@@ -64,7 +87,8 @@ export const authConfig = {
       if (session.user) {
         if (token.id) session.user.id = String(token.id);
         if (token.name) session.user.name = token.name as string;
-        if (token.picture) session.user.image = token.picture as string;
+        session.user.image =
+          typeof token.picture === "string" ? token.picture : null;
       }
       return session;
     },

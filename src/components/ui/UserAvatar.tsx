@@ -56,3 +56,4 @@ export function UserAvatar({ image, name, size = "md", className }: Props) {
     </div>
   );
 }
+

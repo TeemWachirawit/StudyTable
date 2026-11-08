@@ -196,11 +196,20 @@ export function SettingsBoard() {
         throw new Error(data.error || "เกิดข้อผิดพลาดในการบันทึก");
       }
 
-      // Update the active NextAuth session immediately
+      // Update the active NextAuth session (only store short image URLs in JWT cookie to prevent HTTP 431)
+      const cookieSafeImage = image && image.length <= 2048 ? image : "";
       await update({
         name: trimmedName,
-        image: image || "",
+        image: cookieSafeImage,
       });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("studytable:profile-updated", {
+            detail: { name: trimmedName, image: image || null },
+          })
+        );
+      }
 
       setStatusMsg({ type: "success", text: "บันทึกการเปลี่ยนแปลงบัญชีเรียบร้อยแล้ว" });
       if (showPasswordChange) {
