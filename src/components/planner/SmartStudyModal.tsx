@@ -282,10 +282,14 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                             )}
                             style={color.blockStyle}
                           >
-                            <span
-                              className={cn("h-1.5 w-1.5 rounded-full", color.solidClass)}
-                              style={color.solidStyle}
-                            />
+                            {subject?.emoji ? (
+                              <span className="text-xs leading-none select-none">{subject.emoji}</span>
+                            ) : (
+                              <span
+                                className={cn("h-1.5 w-1.5 rounded-full", color.solidClass)}
+                                style={color.solidStyle}
+                              />
+                            )}
                             {subject?.name ?? "วิชา"}
                           </span>
                           <span className="font-semibold text-ink">

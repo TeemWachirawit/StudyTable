@@ -19,7 +19,7 @@ const BASE_STORAGE_KEY = "studytable:v1";
 type Action =
   | { type: "hydrate"; state: StudyState }
   | { type: "reset" }
-  | { type: "saveSubject"; id?: string; name: string; color: SubjectColor }
+  | { type: "saveSubject"; id?: string; name: string; color: SubjectColor; emoji?: string }
   | { type: "deleteSubject"; id: string }
   | { type: "addChapter"; subjectId: string; title: string }
   | { type: "updateChapter"; subjectId: string; chapterId: string; title: string }
@@ -51,7 +51,7 @@ function reducer(state: StudyState, action: Action): StudyState {
         return {
           ...state,
           subjects: state.subjects.map((s) =>
-            s.id === action.id ? { ...s, name: action.name, color: action.color } : s
+            s.id === action.id ? { ...s, name: action.name, color: action.color, emoji: action.emoji } : s
           ),
         };
       }
@@ -59,7 +59,7 @@ function reducer(state: StudyState, action: Action): StudyState {
         ...state,
         subjects: [
           ...state.subjects,
-          { id: uid(), name: action.name, color: action.color, chapters: [] },
+          { id: uid(), name: action.name, color: action.color, emoji: action.emoji, chapters: [] },
         ],
       };
     }

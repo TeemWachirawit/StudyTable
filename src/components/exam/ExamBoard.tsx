@@ -236,8 +236,8 @@ export function ExamBoard() {
         <SubjectEditor
           subject={null}
           onClose={() => setAddingSubject(false)}
-          onSave={(name, color) => {
-            dispatch({ type: "saveSubject", name, color });
+          onSave={(name, color, emoji) => {
+            dispatch({ type: "saveSubject", name, color, emoji });
             setAddingSubject(false);
           }}
         />
@@ -286,12 +286,16 @@ function ExamRow({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="flex items-center gap-2 text-sm">
-              {color && (
+              {subject?.emoji ? (
+                <span className="text-base leading-none select-none" role="img" aria-label={subject.name}>
+                  {subject.emoji}
+                </span>
+              ) : color ? (
                 <span
                   className={cn("h-2.5 w-2.5 rounded-full", color.solidClass)}
                   style={color.solidStyle}
                 />
-              )}
+              ) : null}
               <span className="font-semibold text-ink-soft">{subject?.name ?? "ไม่พบวิชา"}</span>
             </p>
             <h3 className="mt-0.5 font-display text-xl font-bold text-ink">{exam.title || "การสอบ"}</h3>

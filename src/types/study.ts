@@ -10,6 +10,7 @@ export interface Subject {
   id: string;
   name: string;
   color: SubjectColor;
+  emoji?: string;
   chapters: Chapter[];
 }
 

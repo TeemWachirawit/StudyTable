@@ -97,8 +97,8 @@ export function StudyDesk() {
         <SubjectEditor
           subject={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
-          onSave={(name, color) => {
-            dispatch({ type: "saveSubject", id: editing === "new" ? undefined : editing.id, name, color });
+          onSave={(name, color, emoji) => {
+            dispatch({ type: "saveSubject", id: editing === "new" ? undefined : editing.id, name, color, emoji });
             setEditing(null);
           }}
           onDelete={
@@ -177,11 +177,17 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span
-                className={cn("h-2.5 w-2.5 rounded-full", color.solidClass)}
-                style={color.solidStyle}
-                aria-hidden="true"
-              />
+              {subject.emoji ? (
+                <span className="text-xl leading-none select-none" role="img" aria-label={subject.name}>
+                  {subject.emoji}
+                </span>
+              ) : (
+                <span
+                  className={cn("h-2.5 w-2.5 rounded-full", color.solidClass)}
+                  style={color.solidStyle}
+                  aria-hidden="true"
+                />
+              )}
               <h2 id={`subject-${subject.id}`} className="font-display text-xl font-bold text-ink">
                 {subject.name}
               </h2>

@@ -256,6 +256,7 @@ export function createSeedState(today: Date = new Date()): StudyState {
     id: uid(),
     name: "คณิตศาสตร์",
     color: "terracotta",
+    emoji: "📐",
     chapters: [
       ch("ลิมิตและความต่อเนื่อง", true),
       ch("อนุพันธ์", true),
@@ -268,18 +269,21 @@ export function createSeedState(today: Date = new Date()): StudyState {
     id: uid(),
     name: "ฟิสิกส์",
     color: "slate",
+    emoji: "⚡",
     chapters: [ch("ไฟฟ้าสถิต", true), ch("ไฟฟ้ากระแส", true), ch("แม่เหล็กและไฟฟ้า"), ch("คลื่นแม่เหล็กไฟฟ้า")],
   };
   const bio: Subject = {
     id: uid(),
     name: "ชีววิทยา",
     color: "sage",
+    emoji: "🧬",
     chapters: [ch("เซลล์", true), ch("พันธุศาสตร์", true), ch("วิวัฒนาการ")],
   };
   const english: Subject = {
     id: uid(),
     name: "ภาษาอังกฤษ",
     color: "mustard",
+    emoji: "🇬🇧",
     chapters: [ch("Reading Comprehension", true), ch("Tenses"), ch("Conditionals"), ch("Vocabulary Unit 5")],
   };
 

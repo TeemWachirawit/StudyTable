@@ -191,8 +191,8 @@ export function PlannerBoard() {
           <SubjectEditor
             subject={null}
             onClose={() => setAddingSubject(false)}
-            onSave={(name, color) => {
-              dispatch({ type: "saveSubject", name, color });
+            onSave={(name, color, emoji) => {
+              dispatch({ type: "saveSubject", name, color, emoji });
               setAddingSubject(false);
             }}
           />
@@ -241,10 +241,14 @@ export function PlannerBoard() {
                     sc.blockClass
                   )}
                 >
-                  <span
-                    className={cn("h-2 w-2 rounded-full", sc.solidClass)}
-                    style={sc.solidStyle}
-                  />
+                  {s.emoji ? (
+                    <span className="text-xs leading-none select-none">{s.emoji}</span>
+                  ) : (
+                    <span
+                      className={cn("h-2 w-2 rounded-full", sc.solidClass)}
+                      style={sc.solidStyle}
+                    />
+                  )}
                   {s.name}
                   <span className="font-mono font-semibold">{hoursBySubject.get(s.id) ?? 0} ชม.</span>
                 </li>
@@ -443,7 +447,10 @@ export function PlannerBoard() {
                         }}
                       >
                         <div className="flex items-center justify-between gap-1.5">
-                          <span className="truncate font-semibold">{subject.name}</span>
+                          <span className="truncate font-semibold">
+                            {subject.emoji && <span className="mr-1 select-none">{subject.emoji}</span>}
+                            {subject.name}
+                          </span>
                           <span
                             className={cn(
                               "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0",
@@ -600,7 +607,10 @@ export function PlannerBoard() {
                         aria-label={`${isClass ? "คาบเรียน" : "ช่วงอ่าน"} ${subject.name} ${b.topic} วัน${DAYS[b.day]} ${formatBlockTime(b)}`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="truncate font-semibold">{subject.name}</span>
+                          <span className="truncate font-semibold">
+                            {subject.emoji && <span className="mr-1 select-none">{subject.emoji}</span>}
+                            {subject.name}
+                          </span>
                           <span
                             className={cn(
                               "rounded px-1 py-0.2 text-[9px] font-bold uppercase shrink-0",
@@ -712,8 +722,8 @@ export function PlannerBoard() {
         <SubjectEditor
           subject={null}
           onClose={() => setAddingSubject(false)}
-          onSave={(name, color) => {
-            dispatch({ type: "saveSubject", name, color });
+          onSave={(name, color, emoji) => {
+            dispatch({ type: "saveSubject", name, color, emoji });
             setAddingSubject(false);
           }}
         />

@@ -292,10 +292,14 @@ export function DashboardBoard() {
                         className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2 text-sm"
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <span
-                            className="h-3 w-3 shrink-0 rounded-full shadow-2xs"
-                            style={{ backgroundColor: color.hex }}
-                          />
+                          {subject.emoji ? (
+                            <span className="text-base leading-none select-none">{subject.emoji}</span>
+                          ) : (
+                            <span
+                              className="h-3 w-3 shrink-0 rounded-full shadow-2xs"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                          )}
                           <span className="truncate font-semibold text-ink">{subject.name}</span>
                         </div>
                         <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
@@ -381,10 +385,14 @@ export function DashboardBoard() {
                     <div key={subject.id}>
                       <div className="mb-1.5 flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 font-semibold text-ink">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: color.hex }}
-                          />
+                          {subject.emoji ? (
+                            <span className="text-sm leading-none select-none">{subject.emoji}</span>
+                          ) : (
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                          )}
                           {subject.name}
                         </span>
                         <span className="font-mono text-ink-muted">
@@ -829,12 +837,13 @@ export function DashboardBoard() {
         <SubjectEditor
           subject={editingSubject === "new" ? null : editingSubject}
           onClose={() => setEditingSubject(null)}
-          onSave={(name, color) => {
+          onSave={(name, color, emoji) => {
             dispatch({
               type: "saveSubject",
               id: editingSubject === "new" ? undefined : editingSubject.id,
               name,
               color,
+              emoji,
             });
             setEditingSubject(null);
           }}
@@ -1018,6 +1027,7 @@ function DashboardSubjectCard({
                   id: subject.id,
                   name: subject.name,
                   color: e.target.value,
+                  emoji: subject.emoji,
                 })
               }
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -1026,7 +1036,10 @@ function DashboardSubjectCard({
             <Palette className="h-3 w-3 text-white opacity-85" />
           </label>
           <div className="min-w-0">
-            <h3 className="truncate font-display text-base font-bold text-ink">{subject.name}</h3>
+            <h3 className="truncate font-display text-base font-bold text-ink">
+              {subject.emoji && <span className="mr-1.5 select-none">{subject.emoji}</span>}
+              {subject.name}
+            </h3>
             <p className="font-mono text-[11px] text-ink-muted">
               อ่านจบ {done}/{total} บท ({pct}%)
             </p>

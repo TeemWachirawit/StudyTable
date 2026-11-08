@@ -84,6 +84,7 @@ export const subjects = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     color: text("color").$type<SubjectColor>().notNull(),
+    emoji: text("emoji"),
     position: integer("position").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

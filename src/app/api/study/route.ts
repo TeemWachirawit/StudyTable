@@ -39,6 +39,7 @@ function isValidStudyState(state: unknown): state is StudyState {
       typeof subj.color !== "string" ||
       !subj.color ||
       subj.color.length > 64 ||
+      (subj.emoji !== undefined && (typeof subj.emoji !== "string" || subj.emoji.length > 16)) ||
       !Array.isArray(subj.chapters) ||
       subj.chapters.length > MAX_CHAPTERS_PER_SUBJECT
     ) {

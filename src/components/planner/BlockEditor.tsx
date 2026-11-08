@@ -293,7 +293,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
           >
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name}
+                {s.emoji ? `${s.emoji} ` : ""}{s.name}
               </option>
             ))}
           </select>

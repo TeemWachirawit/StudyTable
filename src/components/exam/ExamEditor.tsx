@@ -106,7 +106,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
             >
               {subjects.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.emoji ? `${s.emoji} ` : ""}{s.name}
                 </option>
               ))}
             </select>

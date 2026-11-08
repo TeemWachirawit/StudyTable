@@ -33,6 +33,7 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
       id: s.id,
       name: s.name,
       color: s.color,
+      emoji: s.emoji || undefined,
       chapters: (chaptersBySubject.get(s.id) ?? []).map((c) => ({
         id: c.id,
         title: c.title,
@@ -87,6 +88,7 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
           userId,
           name: s.name,
           color: s.color,
+          emoji: s.emoji || null,
           position: idx,
         }))
       );

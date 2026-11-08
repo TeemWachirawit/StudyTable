@@ -16,21 +16,27 @@ import {
 import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/study";
 
+const PRESET_EMOJIS = [
+  "📐", "🔬", "🧪", "⚡", "💻", "📚", "🇬🇧", "🌏", "⚖️", "📊",
+  "🎨", "🎵", "🧠", "💊", "💡", "📝", "🚀", "📖", "✏️", "🩺"
+];
+
 interface Props {
   subject: Subject | null;
   onClose: () => void;
-  onSave: (name: string, color: SubjectColor) => void;
+  onSave: (name: string, color: SubjectColor, emoji?: string) => void;
   onDelete?: () => void;
 }
 
 export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
   const [name, setName] = useState(subject?.name ?? "");
   const [color, setColor] = useState<SubjectColor>(subject?.color ?? "terracotta");
+  const [emoji, setEmoji] = useState(subject?.emoji ?? "📚");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const valid = name.trim().length > 0;
 
   const resolved = getSubjectColor(color);
-  const submit = () => valid && onSave(name.trim(), color);
+  const submit = () => valid && onSave(name.trim(), color, emoji.trim() || undefined);
 
   return (
     <Modal
@@ -83,15 +89,68 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
           submit();
         }}
       >
-        <Field label="ชื่อวิชา" htmlFor="subject-name">
-          <input
-            id="subject-name"
-            className={inputClass}
-            placeholder="เช่น เคมี"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
+        <div className="space-y-3">
+          <Field label="ชื่อวิชาและไอคอน Emoji" htmlFor="subject-name">
+            <div className="flex items-center gap-2">
+              {/* Emoji Display / Custom input */}
+              <div className="relative shrink-0">
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={emoji}
+                  onChange={(e) => setEmoji(e.target.value)}
+                  className="flex h-11 w-14 items-center justify-center rounded-lg border border-line-strong bg-paper text-center text-xl shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+                  title="พิมพ์หรือวาง Emoji"
+                  placeholder="📚"
+                />
+              </div>
+
+              {/* Name Input */}
+              <input
+                id="subject-name"
+                className={cn(inputClass, "flex-1")}
+                placeholder="เช่น แคลคูลัส, เคมีอินทรีย์"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </Field>
+
+          {/* Preset Emojis */}
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-ink-muted">เลือก Emoji ที่สื่อถึงวิชานี้:</p>
+            <div className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-paper/60 p-2">
+              {PRESET_EMOJIS.map((e) => {
+                const isSelected = emoji === e;
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEmoji(e)}
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-transform hover:scale-110 active:scale-95",
+                      isSelected
+                        ? "border border-terracotta/40 bg-sheet shadow-xs ring-2 ring-terracotta/30"
+                        : "hover:bg-sheet/80"
+                    )}
+                  >
+                    {e}
+                  </button>
+                );
+              })}
+              {emoji && (
+                <button
+                  type="button"
+                  onClick={() => setEmoji("")}
+                  className="rounded-lg px-2 text-xs text-ink-muted transition-colors hover:bg-sheet hover:text-ink"
+                  title="ไม่ใช้ Emoji"
+                >
+                  ลบออก
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
         <fieldset className="space-y-3">
           <legend className="text-sm font-semibold text-ink">สีประจำวิชา</legend>
