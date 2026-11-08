@@ -4,36 +4,55 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Check, CloudAlert, Loader2, LogOut, Settings, User } from "lucide-react";
+import {
+  BookOpenCheck,
+  CalendarDays,
+  Check,
+  CloudAlert,
+  Hourglass,
+  LayoutDashboard,
+  Loader2,
+  LogOut,
+  Settings,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "./ui/button";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { UserAvatar } from "./ui/UserAvatar";
 
-const navLinks = [
+export const navLinks = [
   {
     href: "/planner",
     label: "Planner",
+    icon: CalendarDays,
     dot: "bg-terracotta",
     activeClass: "bg-terracotta-tint text-terracotta-deep border-terracotta/30",
+    activeMobile: "text-terracotta bg-terracotta-tint/70",
   },
   {
     href: "/table",
     label: "Table",
+    icon: BookOpenCheck,
     dot: "bg-sage",
     activeClass: "bg-sage-tint text-sage-deep border-sage/30",
+    activeMobile: "text-sage-deep bg-sage-tint/70",
   },
   {
     href: "/exam",
     label: "Exam",
+    icon: Hourglass,
     dot: "bg-mustard",
     activeClass: "bg-mustard-tint text-mustard-deep border-mustard/35",
+    activeMobile: "text-mustard-deep bg-mustard-tint/70",
   },
   {
     href: "/dashboard",
     label: "Dashboard",
+    icon: LayoutDashboard,
     dot: "bg-plum",
     activeClass: "bg-plum-tint text-plum-deep border-plum/30",
+    activeMobile: "text-plum-deep bg-plum-tint/70",
   },
 ];
 
@@ -43,29 +62,79 @@ export function NavLinks({ className }: { className?: string }) {
     <nav
       aria-label="หน้าหลัก"
       className={cn(
-        "flex items-center gap-1 overflow-x-auto text-xs font-medium sm:gap-1.5 sm:text-sm",
+        "hidden md:flex items-center gap-1.5 text-sm font-medium",
         className
       )}
     >
       {navLinks.map((link) => {
         const active = pathname.startsWith(link.href);
+        const Icon = link.icon;
         return (
           <Link
             key={link.href}
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors sm:gap-2 sm:px-3",
+              "inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 transition-colors",
               active
                 ? link.activeClass
                 : "border-transparent text-ink-soft hover:bg-paper-deep hover:text-ink"
             )}
           >
-            <span className={cn("hidden h-2 w-2 rounded-full sm:inline-block", link.dot)} aria-hidden="true" />
+            <Icon className="h-4 w-4" />
             {link.label}
           </Link>
         );
       })}
+    </nav>
+  );
+}
+
+export function MobileBottomNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      aria-label="เมนูหลักสำหรับมือถือ"
+      className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-sheet/95 backdrop-blur-md pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 md:hidden shadow-[0_-4px_20px_rgba(15,23,42,0.06)]"
+    >
+      <div className="mx-auto grid grid-cols-4 px-2">
+        {navLinks.map((link) => {
+          const active = pathname.startsWith(link.href);
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 rounded-xl py-2 transition-all min-h-[3.25rem]",
+                active
+                  ? link.activeMobile
+                  : "text-ink-muted hover:bg-paper-deep hover:text-ink"
+              )}
+            >
+              <div className="relative flex items-center justify-center">
+                <Icon
+                  className={cn(
+                    "h-5 w-5 transition-transform",
+                    active ? "stroke-[2.25] scale-105" : "stroke-[1.8]"
+                  )}
+                />
+                {active && (
+                  <span
+                    className={cn("absolute -top-0.5 -right-1.5 h-1.5 w-1.5 rounded-full ring-2 ring-sheet", link.dot)}
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+              <span className={cn("text-[11px] font-medium leading-none", active ? "font-bold" : "")}>
+                {link.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
@@ -176,10 +245,11 @@ export function NavbarStatusOrCta() {
         <button
           type="button"
           onClick={() => setMenuOpen((prev) => !prev)}
-          className="inline-flex items-center gap-2 rounded-lg border border-line bg-paper py-1 pr-3 pl-1.5 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper p-1 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep sm:gap-2 sm:py-1 sm:pr-3 sm:pl-1.5"
+          aria-label="เมนูบัญชีผู้ใช้"
         >
           <UserAvatar image={displayImage} name={displayName} size="sm" />
-          <span className="max-w-32 truncate">{displayName || session.user.email}</span>
+          <span className="hidden max-w-32 truncate sm:inline">{displayName || session.user.email}</span>
         </button>
 
         {menuOpen && (

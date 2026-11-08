@@ -43,7 +43,7 @@ export default function RootLayout({
       lang="th"
       className={`${ibmSansThai.variable} ${notoSerifThai.variable} ${ibmMono.variable} scroll-smooth`}
     >
-      <body className="flex min-h-screen flex-col selection:bg-terracotta-tint selection:text-terracotta-deep">
+      <body className="flex min-h-screen flex-col pb-16 md:pb-0 selection:bg-terracotta-tint selection:text-terracotta-deep">
         <Providers>
           <Navbar />
           <div className="flex-1">{children}</div>
