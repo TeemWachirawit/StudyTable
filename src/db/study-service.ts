@@ -61,7 +61,7 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
     }),
     exams: examRows.map((e) => ({
       id: e.id,
-      subjectId: e.subjectId,
+      subjectId: e.subjectId ?? "",
       title: e.title,
       date: e.date,
       time: e.time,
@@ -140,7 +140,7 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
         state.exams.map((e) => ({
           id: e.id,
           userId,
-          subjectId: e.subjectId,
+          subjectId: e.subjectId || null,
           title: e.title,
           date: e.date,
           time: e.time ?? "",

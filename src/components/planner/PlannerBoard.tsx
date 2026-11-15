@@ -76,15 +76,6 @@ export function PlannerBoard() {
     return state.blocks;
   }, [filterType, classBlocks, studyBlocksList, state.blocks]);
 
-  const hoursBySubject = useMemo(() => {
-    const totals = new Map<string, number>();
-    for (const b of displayedBlocks) {
-      const added = blockDurationMinutes(b) / 60;
-      totals.set(b.subjectId, Math.round(((totals.get(b.subjectId) ?? 0) + added) * 10) / 10);
-    }
-    return totals;
-  }, [displayedBlocks]);
-
   // Scroll the grid to the earliest planned session on first load.
   useEffect(() => {
     if (!hydrated || !scrollRef.current) return;
@@ -229,32 +220,6 @@ export function PlannerBoard() {
               อ่านหนังสือ: <span className="font-mono font-semibold text-ink">{studyHours}</span> ชม.
             </p>
           </div>
-          <ul className="flex flex-wrap gap-2">
-            {state.subjects.map((s) => {
-              const sc = getSubjectColor(s.color);
-              return (
-                <li
-                  key={s.id}
-                  style={sc.blockStyle}
-                  className={cn(
-                    "flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
-                    sc.blockClass
-                  )}
-                >
-                  {s.emoji ? (
-                    <span className="text-xs leading-none select-none">{s.emoji}</span>
-                  ) : (
-                    <span
-                      className={cn("h-2 w-2 rounded-full", sc.solidClass)}
-                      style={sc.solidStyle}
-                    />
-                  )}
-                  {s.name}
-                  <span className="font-mono font-semibold">{hoursBySubject.get(s.id) ?? 0} ชม.</span>
-                </li>
-              );
-            })}
-          </ul>
         </div>
 
         {/* View Filter & Smart Allocator Trigger */}

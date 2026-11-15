@@ -148,7 +148,7 @@ export const exams = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    subjectId: text("subject_id").notNull(),
+    subjectId: text("subject_id"),
     title: text("title").notNull(),
     date: text("date").notNull(),
     time: text("time").default("").notNull(),

@@ -107,7 +107,7 @@ function isValidStudyState(state: unknown): state is StudyState {
       !e.id ||
       e.id.length > 100 ||
       typeof e.subjectId !== "string" ||
-      !subjectIds.has(e.subjectId) ||
+      (e.subjectId !== "" && !subjectIds.has(e.subjectId)) ||
       typeof e.title !== "string" ||
       !e.title.trim() ||
       e.title.length > 200 ||

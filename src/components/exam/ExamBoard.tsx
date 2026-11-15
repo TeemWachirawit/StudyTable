@@ -45,15 +45,11 @@ export function ExamBoard() {
   }, [upcoming, subjectById]);
 
   const openNew = () => {
-    if (state.subjects.length === 0) {
-      setAddingSubject(true);
-      return;
-    }
     const inAWeek = new Date();
     inAWeek.setDate(inAWeek.getDate() + 7);
     setDraft({
       id: uid(),
-      subjectId: state.subjects[0].id,
+      subjectId: "",
       title: "",
       date: toISODate(inAWeek),
       time: "",
@@ -75,11 +71,9 @@ export function ExamBoard() {
             <Button variant="outline" size="sm" onClick={() => setAddingSubject(true)}>
               <BookPlus className="h-4 w-4" /> เพิ่มวิชา
             </Button>
-            {state.subjects.length > 0 && (
-              <Button size="sm" onClick={openNew}>
-                <Plus className="h-4 w-4" /> เพิ่มการสอบ
-              </Button>
-            )}
+            <Button size="sm" onClick={openNew}>
+              <Plus className="h-4 w-4" /> เพิ่มการสอบ
+            </Button>
           </>
         ) : undefined
       }
@@ -100,22 +94,7 @@ export function ExamBoard() {
       {header}
 
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-        {state.subjects.length === 0 ? (
-          <EmptyState
-            title="ยังไม่มีวิชา"
-            body="เพิ่มวิชาแรกของคุณเพื่อเริ่มลงวันสอบ หรือไปจัดการบทเรียนในหน้า Table"
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button onClick={() => setAddingSubject(true)}>
-                  <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
-                </Button>
-                <Link href="/table" className={buttonVariants({ variant: "outline" })}>
-                  ไปที่หน้า Table
-                </Link>
-              </div>
-            }
-          />
-        ) : upcoming.length === 0 && past.length === 0 ? (
+        {upcoming.length === 0 && past.length === 0 ? (
           <EmptyState
             title="ยังไม่มีการสอบที่บันทึกไว้"
             body="เพิ่มวันสอบและหัวข้อที่ออกสอบ แล้วระบบจะนับถอยหลังให้"
@@ -296,7 +275,7 @@ function ExamRow({
                   style={color.solidStyle}
                 />
               ) : null}
-              <span className="font-semibold text-ink-soft">{subject?.name ?? "ไม่พบวิชา"}</span>
+              <span className="font-semibold text-ink-soft">{subject?.name ?? "ไม่ระบุวิชา"}</span>
             </p>
             <h3 className="mt-0.5 font-display text-xl font-bold text-ink">{exam.title || "การสอบ"}</h3>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">

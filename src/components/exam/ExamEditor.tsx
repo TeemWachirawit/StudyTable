@@ -96,7 +96,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="วิชา" htmlFor="exam-subject">
+          <Field label="วิชา (ไม่บังคับ)" htmlFor="exam-subject">
             <select
               id="exam-subject"
               className={inputClass}
@@ -104,6 +104,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
               // chapters belong to a subject, so reset the selection when it changes
               onChange={(e) => setForm((f) => ({ ...f, subjectId: e.target.value, chapterIds: [] }))}
             >
+              <option value="">ไม่ระบุวิชา</option>
               {subjects.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.emoji ? `${s.emoji} ` : ""}{s.name}
@@ -174,13 +175,17 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
                 );
               })}
             </ul>
-          ) : (
+          ) : subject ? (
             <p className="rounded-lg border border-dashed border-line-strong px-3 py-3 text-sm text-ink-muted">
               วิชานี้ยังไม่มีบทเรียน{" "}
               <Link href="/table" className="font-medium text-terracotta hover:underline">
                 เพิ่มบทในหน้า Table
               </Link>{" "}
               หรือพิมพ์หัวข้อเองด้านล่าง
+            </p>
+          ) : (
+            <p className="rounded-lg border border-dashed border-line-strong px-3 py-3 text-sm text-ink-muted">
+              ไม่ได้เลือกวิชา สามารถพิมพ์หัวข้อที่ออกสอบเองด้านล่างได้
             </p>
           )}
         </fieldset>
