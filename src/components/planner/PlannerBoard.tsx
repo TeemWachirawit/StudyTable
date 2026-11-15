@@ -210,7 +210,7 @@ export function PlannerBoard() {
     <>
       {header}
 
-      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
+      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
         {/* summary statistics */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-sheet px-4 py-3 shadow-2xs">
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-ink-soft">
@@ -498,7 +498,7 @@ export function PlannerBoard() {
           )}
         >
           <div
-            className="grid min-w-[980px]"
+            className="grid min-w-[860px]"
             style={{
               gridTemplateColumns: "4.25rem repeat(7, minmax(0, 1fr))",
               gridTemplateRows: `3.25rem repeat(${HOURS.length}, ${ROW_REM}rem)`,
