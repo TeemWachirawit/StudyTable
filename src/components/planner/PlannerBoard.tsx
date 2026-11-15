@@ -38,7 +38,7 @@ import { BlockEditor } from "./BlockEditor";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
 import { SmartStudyModal } from "./SmartStudyModal";
 
-const ROW_REM = 3;
+const ROW_REM = 4.5;
 const HOURS = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
 
 export function PlannerBoard() {
@@ -210,7 +210,7 @@ export function PlannerBoard() {
     <>
       {header}
 
-      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+      <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
         {/* summary statistics */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-sheet px-4 py-3 shadow-2xs">
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-ink-soft">
@@ -379,16 +379,16 @@ export function PlannerBoard() {
               </div>
             </div>
             <div
-              className="grid max-h-[62vh] overflow-y-auto"
+              className="grid max-h-[68vh] overflow-y-auto"
               style={{
-                gridTemplateColumns: "3.75rem minmax(0, 1fr)",
+                gridTemplateColumns: "4.25rem minmax(0, 1fr)",
                 gridTemplateRows: `repeat(${HOURS.length}, ${ROW_REM}rem)`,
               }}
             >
               {HOURS.map((h, r) => (
                 <div key={h} className="contents">
                   <div
-                    className="border-r border-b border-line bg-sheet pt-1 pr-2 text-right font-mono text-[11px] text-ink-muted"
+                    className="border-r border-b border-line bg-sheet pt-1.5 pr-2.5 text-right font-mono text-xs text-ink-muted"
                     style={{ gridColumn: 1, gridRow: r + 1 }}
                   >
                     {formatHour(h)}
@@ -406,7 +406,7 @@ export function PlannerBoard() {
                     className="group border-b border-line/70 hover:bg-terracotta-tint/40 focus-visible:bg-terracotta-tint/40 focus-visible:outline-none"
                     style={{ gridColumn: 2, gridRow: r + 1 }}
                   >
-                    <Plus className="mx-auto h-4 w-4 text-terracotta opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
+                    <Plus className="mx-auto h-5 w-5 text-terracotta opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
                   </button>
                 </div>
               ))}
@@ -493,15 +493,15 @@ export function PlannerBoard() {
         <div
           ref={scrollRef}
           className={cn(
-            "max-h-[70vh] overflow-auto rounded-xl border border-line-strong bg-sheet shadow-[0_18px_40px_-28px_rgba(15,23,42,0.14)]",
+            "max-h-[76vh] overflow-auto rounded-xl border border-line-strong bg-sheet shadow-[0_18px_40px_-28px_rgba(15,23,42,0.14)]",
             mobileDay !== "all" && "hidden md:block"
           )}
         >
           <div
-            className="grid min-w-[760px]"
+            className="grid min-w-[980px]"
             style={{
-              gridTemplateColumns: "3.75rem repeat(7, minmax(0, 1fr))",
-              gridTemplateRows: `2.75rem repeat(${HOURS.length}, ${ROW_REM}rem)`,
+              gridTemplateColumns: "4.25rem repeat(7, minmax(0, 1fr))",
+              gridTemplateRows: `3.25rem repeat(${HOURS.length}, ${ROW_REM}rem)`,
             }}
           >
             {/* corner + day headers (sticky) */}
@@ -531,7 +531,7 @@ export function PlannerBoard() {
             {HOURS.map((h, r) => (
               <div key={h} className="contents">
                 <div
-                  className="sticky left-0 z-10 border-r border-b border-line bg-sheet pt-1 pr-2 text-right font-mono text-[11px] text-ink-muted"
+                  className="sticky left-0 z-10 border-r border-b border-line bg-sheet pt-1.5 pr-2.5 text-right font-mono text-xs text-ink-muted"
                   style={{ gridColumn: 1, gridRow: r + 2 }}
                 >
                   {formatHour(h)}
@@ -560,7 +560,7 @@ export function PlannerBoard() {
                     )}
                     style={{ gridColumn: c + 2, gridRow: r + 2 }}
                   >
-                    <Plus className="mx-auto h-4 w-4 text-terracotta opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
+                    <Plus className="mx-auto h-5 w-5 text-terracotta opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
                   </button>
                 ))}
               </div>
@@ -595,7 +595,7 @@ export function PlannerBoard() {
                         type="button"
                         onClick={() => setDraft(b)}
                         className={cn(
-                          "pointer-events-auto absolute inset-x-[3px] z-[5] flex flex-col overflow-hidden rounded-lg border px-2.5 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
+                          "pointer-events-auto absolute inset-x-1 z-[5] flex flex-col overflow-hidden rounded-lg border px-3 py-2 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none sm:text-[13px]",
                           isClass && "ring-1 ring-terracotta/30 shadow-2xs",
                           sc.blockClass
                         )}
