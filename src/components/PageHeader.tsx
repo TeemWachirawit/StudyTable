@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type HeaderTone = "sky" | "mint" | "amber";
+type HeaderTone = "sky" | "mint" | "amber" | "plum";
 
 const toneStyles: Record<HeaderTone, { badge: string; dot: string }> = {
   sky: {
@@ -15,6 +15,10 @@ const toneStyles: Record<HeaderTone, { badge: string; dot: string }> = {
   amber: {
     badge: "border-mustard/30 bg-mustard-tint text-mustard-deep",
     dot: "bg-mustard",
+  },
+  plum: {
+    badge: "border-plum/25 bg-plum-tint text-plum-deep",
+    dot: "bg-plum",
   },
 };
 
@@ -56,8 +60,28 @@ export function PageHeader({
 
 export function LoadingDesk() {
   return (
-    <div className="mx-auto max-w-6xl px-5 py-16 text-center text-sm text-ink-muted sm:px-8" aria-live="polite">
-      กำลังเปิดโต๊ะเรียนของคุณ…
+    <div className="mx-auto max-w-6xl space-y-6 px-5 py-8 sm:px-8" aria-live="polite" aria-busy="true">
+      <span className="sr-only">กำลังเปิดโต๊ะเรียนของคุณ…</span>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-24 animate-pulse rounded-xl border border-line bg-sheet p-5">
+            <div className="h-3 w-24 rounded bg-paper-deep" />
+            <div className="mt-3 h-7 w-20 rounded bg-paper-deep" />
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <div key={i} className="h-64 animate-pulse rounded-xl border border-line bg-sheet p-5">
+            <div className="h-5 w-40 rounded bg-paper-deep" />
+            <div className="mt-4 space-y-3">
+              <div className="h-3 w-full rounded bg-paper-deep" />
+              <div className="h-3 w-5/6 rounded bg-paper-deep" />
+              <div className="h-3 w-2/3 rounded bg-paper-deep" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

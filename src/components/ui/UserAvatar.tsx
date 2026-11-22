@@ -26,7 +26,8 @@ const iconSizes = {
 };
 
 export function UserAvatar({ image, name, size = "md", className }: Props) {
-  const [imgError, setImgError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const imgError = Boolean(image && failedSrc === image);
 
   const initial = name?.trim() ? name.trim().charAt(0).toUpperCase() : "";
 
@@ -44,7 +45,7 @@ export function UserAvatar({ image, name, size = "md", className }: Props) {
           src={image}
           alt={name || "รูปโปรไฟล์ผู้ใช้"}
           className="h-full w-full object-cover"
-          onError={() => setImgError(true)}
+          onError={() => setFailedSrc(image)}
         />
       ) : initial ? (
         <span className="font-display leading-none text-terracotta-deep">

@@ -55,24 +55,9 @@ export function StudyDesk() {
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {state.subjects.length > 0 && (
           <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Stat
-              label="ความคืบหน้ารวม"
-              value={`${totals.pct}%`}
-              badge="Progress"
-              toneClass="border-terracotta/25 bg-terracotta-tint text-terracotta-deep"
-            />
-            <Stat
-              label="บทที่อ่านจบแล้ว"
-              value={`${totals.done}/${totals.total}`}
-              badge="Chapters"
-              toneClass="border-sage/25 bg-sage-tint text-sage-deep"
-            />
-            <Stat
-              label="วิชาบนโต๊ะเรียน"
-              value={String(state.subjects.length)}
-              badge="Subjects"
-              toneClass="border-mustard/35 bg-mustard-tint text-mustard-deep"
-            />
+            <Stat label="ความคืบหน้ารวม" value={`${totals.pct}%`} dotClass="bg-terracotta" />
+            <Stat label="บทที่อ่านจบแล้ว" value={`${totals.done}/${totals.total}`} dotClass="bg-sage" />
+            <Stat label="วิชาบนโต๊ะเรียน" value={String(state.subjects.length)} dotClass="bg-mustard" />
           </dl>
         )}
 
@@ -118,23 +103,19 @@ export function StudyDesk() {
 function Stat({
   label,
   value,
-  badge,
-  toneClass,
+  dotClass,
 }: {
   label: string;
   value: string;
-  badge: string;
-  toneClass: string;
+  dotClass: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
-      <div>
-        <dt className="text-xs font-medium text-ink-muted sm:text-sm">{label}</dt>
-        <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">{value}</dd>
-      </div>
-      <span className={cn("rounded-full border px-2.5 py-1 font-mono text-[11px] font-semibold", toneClass)}>
-        {badge}
-      </span>
+    <div className="rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+      <dt className="flex items-center gap-2 text-xs font-medium text-ink-muted sm:text-sm">
+        <span className={cn("h-2 w-2 rounded-full", dotClass)} aria-hidden="true" />
+        {label}
+      </dt>
+      <dd className="mt-1.5 font-mono text-2xl font-semibold text-ink sm:text-3xl">{value}</dd>
     </div>
   );
 }
@@ -264,7 +245,7 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
         </Button>
       </form>
 
-      <ul className="max-h-96 overflow-y-auto overscroll-contain border-t border-line">
+      <ul className="border-t border-line">
         {subject.chapters.length === 0 && (
           <li className="px-5 py-6 text-center text-sm text-ink-muted">
             ยังไม่มีบทเรียน พิมพ์ชื่อบทเรียนด้านบนเพื่อเริ่มบันทึก
@@ -323,7 +304,7 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
                     setEditingChapterId(c.id);
                     setEditingTitle(c.title);
                   }}
-                  className="rounded p-1 text-ink-muted opacity-60 transition-opacity hover:bg-paper-deep hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-paper-deep hover:text-ink hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                   aria-label={`เปลี่ยนชื่อบท ${c.title}`}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -331,7 +312,7 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
                 <button
                   type="button"
                   onClick={() => dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })}
-                  className="rounded p-1 text-ink-muted opacity-60 transition-opacity hover:bg-slate-tint hover:text-slate-deep focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-danger-tint hover:text-danger-deep hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                   aria-label={`ลบบท ${c.title}`}
                 >
                   <X className="h-4 w-4" />

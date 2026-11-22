@@ -114,13 +114,14 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
 
         {/* Options */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink">
+          <fieldset>
+            <legend className="mb-1.5 block text-xs font-semibold text-ink">
               ช่วงเวลาที่สะดวกอ่าน
-            </label>
+            </legend>
             <div className="grid grid-cols-3 gap-1 rounded-lg border border-line bg-paper p-1 text-xs">
               <button
                 type="button"
+                aria-pressed={preferredWindow === "all"}
                 onClick={() => setPreferredWindow("all")}
                 className={cn(
                   "rounded-md py-1.5 font-medium transition-colors",
@@ -133,6 +134,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
               </button>
               <button
                 type="button"
+                aria-pressed={preferredWindow === "evening"}
                 onClick={() => setPreferredWindow("evening")}
                 className={cn(
                   "rounded-md py-1.5 font-medium transition-colors",
@@ -145,6 +147,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
               </button>
               <button
                 type="button"
+                aria-pressed={preferredWindow === "weekend"}
                 onClick={() => setPreferredWindow("weekend")}
                 className={cn(
                   "rounded-md py-1.5 font-medium transition-colors",
@@ -156,17 +159,18 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                 เสาร์–อาทิตย์
               </button>
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink">
+          <fieldset>
+            <legend className="mb-1.5 block text-xs font-semibold text-ink">
               เป้าหมายเวลาอ่านต่อวิชา
-            </label>
+            </legend>
             <div className="grid grid-cols-3 gap-1 rounded-lg border border-line bg-paper p-1 text-xs">
               {[1, 2, 3].map((hrs) => (
                 <button
                   key={hrs}
                   type="button"
+                  aria-pressed={hoursPerSubject === hrs}
                   onClick={() => setHoursPerSubject(hrs)}
                   className={cn(
                     "rounded-md py-1.5 font-medium transition-colors",
@@ -179,14 +183,14 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
         </div>
 
         {/* Subjects Filter */}
-        <div>
-          <label className="mb-1.5 block text-xs font-semibold text-ink">
+        <fieldset>
+          <legend className="mb-1.5 block text-xs font-semibold text-ink">
             เลือกวิชาที่ต้องการจัดตารางอ่าน
-          </label>
+          </legend>
           <div className="flex flex-wrap gap-1.5">
             {state.subjects.map((s) => {
               const active = selectedSubjectIds.includes(s.id);
@@ -196,6 +200,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                 <button
                   key={s.id}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => toggleSubject(s.id)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors",
@@ -210,7 +215,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                   />
                   <span>{s.name}</span>
                   {hasClass && (
-                    <span className="text-[10px] text-terracotta font-normal">
+                    <span className="text-[11px] text-terracotta font-normal">
                       (มีตารางเรียน)
                     </span>
                   )}
@@ -218,7 +223,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
               );
             })}
           </div>
-        </div>
+        </fieldset>
 
         {/* Suggestions List */}
         <div>
@@ -255,9 +260,8 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                 const isChecked = selectedSuggestionIds.has(s.id);
 
                 return (
-                  <div
+                  <label
                     key={s.id}
-                    onClick={() => toggleSuggestion(s.id)}
                     className={cn(
                       "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-2.5 transition-all text-xs",
                       isChecked
@@ -271,7 +275,6 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                         checked={isChecked}
                         onChange={() => toggleSuggestion(s.id)}
                         className="h-4 w-4 rounded border-line text-terracotta focus:ring-terracotta shrink-0"
-                        onClick={(e) => e.stopPropagation()}
                       />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -305,7 +308,7 @@ export function SmartStudyModal({ state, onClose, onApply }: Props) {
                     <span className="shrink-0 rounded bg-paper-deep px-1.5 py-0.5 font-mono text-[11px] font-semibold text-ink-soft">
                       {s.duration} ชม.
                     </span>
-                  </div>
+                  </label>
                 );
               })}
             </div>

@@ -9,7 +9,6 @@ import {
   GraduationCap,
   MapPin,
   Plus,
-  RotateCcw,
   Sparkles,
 } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
@@ -47,8 +46,8 @@ export function PlannerBoard() {
   const [addingSubject, setAddingSubject] = useState(false);
   const [smartModalOpen, setSmartModalOpen] = useState(false);
   const [filterType, setFilterType] = useState<"all" | "class" | "study">("all");
-  const [confirmingReset, setConfirmingReset] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => weekdayIndex(new Date()), []);
   const [mobileDay, setMobileDay] = useState<number | "all">(today);
 
@@ -76,14 +75,16 @@ export function PlannerBoard() {
     return state.blocks;
   }, [filterType, classBlocks, studyBlocksList, state.blocks]);
 
-  // Scroll the grid to the earliest planned session on first load.
+  // Scroll the grid (desktop & mobile) to the earliest planned session on first load.
   useEffect(() => {
-    if (!hydrated || !scrollRef.current) return;
+    if (!hydrated) return;
     const earliest = state.blocks.length
       ? Math.min(...state.blocks.map((b) => b.startHour))
       : 8;
     const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    scrollRef.current.scrollTop = Math.max(0, earliest - FIRST_HOUR - 0.5) * ROW_REM * rootFont;
+    const targetTop = Math.max(0, earliest - FIRST_HOUR - 0.5) * ROW_REM * rootFont;
+    if (scrollRef.current) scrollRef.current.scrollTop = targetTop;
+    if (mobileScrollRef.current) mobileScrollRef.current.scrollTop = targetTop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
@@ -201,7 +202,7 @@ export function PlannerBoard() {
     <>
       {header}
 
-      <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {/* summary statistics */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-sheet px-4 py-3 shadow-2xs">
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-ink-soft">
@@ -224,9 +225,14 @@ export function PlannerBoard() {
 
         {/* View Filter & Smart Allocator Trigger */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs">
+          <div
+            role="group"
+            aria-label="กรองประเภทตาราง"
+            className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs"
+          >
             <button
               type="button"
+              aria-pressed={filterType === "all"}
               onClick={() => setFilterType("all")}
               className={cn(
                 "rounded-lg px-3 py-1.5 font-medium transition-colors",
@@ -239,6 +245,7 @@ export function PlannerBoard() {
             </button>
             <button
               type="button"
+              aria-pressed={filterType === "class"}
               onClick={() => setFilterType("class")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors",
@@ -252,6 +259,7 @@ export function PlannerBoard() {
             </button>
             <button
               type="button"
+              aria-pressed={filterType === "study"}
               onClick={() => setFilterType("study")}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition-colors",
@@ -277,7 +285,11 @@ export function PlannerBoard() {
         </div>
 
         {/* Mobile Day Switcher */}
-        <div className="mb-4 flex items-center gap-1 overflow-x-auto rounded-xl border border-line bg-sheet p-1.5 md:hidden">
+        <div
+          role="group"
+          aria-label="เลือกวัน"
+          className="mb-4 flex items-center gap-1 overflow-x-auto rounded-xl border border-line bg-sheet p-1.5 md:hidden"
+        >
           {DAYS_SHORT.map((short, i) => {
             const active = mobileDay === i;
             const hasBlocks = displayedBlocks.some((b) => b.day === i);
@@ -285,6 +297,7 @@ export function PlannerBoard() {
               <button
                 key={short}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setMobileDay(i)}
                 className={cn(
                   "relative flex flex-1 flex-col items-center rounded-lg py-1.5 text-xs font-semibold transition-colors",
@@ -305,6 +318,7 @@ export function PlannerBoard() {
           })}
           <button
             type="button"
+            aria-pressed={mobileDay === "all"}
             onClick={() => setMobileDay("all")}
             className={cn(
               "shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors",
@@ -344,6 +358,7 @@ export function PlannerBoard() {
               </div>
             </div>
             <div
+              ref={mobileScrollRef}
               className="grid max-h-[68vh] overflow-y-auto"
               style={{
                 gridTemplateColumns: "4.25rem minmax(0, 1fr)",
@@ -418,7 +433,7 @@ export function PlannerBoard() {
                           </span>
                           <span
                             className={cn(
-                              "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0",
+                              "rounded px-1.5 py-0.5 text-[11px] leading-none font-bold shrink-0",
                               isClass
                                 ? "bg-terracotta/25 text-terracotta-deep"
                                 : "bg-sage/25 text-sage-deep"
@@ -427,13 +442,13 @@ export function PlannerBoard() {
                             {isClass ? "เรียน" : "อ่าน"}
                           </span>
                         </div>
-                        {isClass && b.location && (
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
+                        {isClass && b.location && heightRem >= 4.2 && (
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[11px] opacity-90">
                             <MapPin className="h-3 w-3 shrink-0" />
                             <span className="truncate">{b.location}</span>
                           </span>
                         )}
-                        {b.topic && (
+                        {b.topic && heightRem >= 3.5 && (
                           <span className="mt-0.5 inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
                             {!isClass && chapterDone && (
                               <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
@@ -441,8 +456,8 @@ export function PlannerBoard() {
                             <span className="truncate">{b.topic}</span>
                           </span>
                         )}
-                        {heightRem >= 2.5 && (
-                          <span className="mt-auto font-mono text-[10px] opacity-75">
+                        {heightRem >= 3 && (
+                          <span className="mt-auto font-mono text-[11px] opacity-75">
                             {formatBlockTime(b)}
                           </span>
                         )}
@@ -485,7 +500,7 @@ export function PlannerBoard() {
                 <span className="lg:hidden">{DAYS_SHORT[i]}</span>
                 <span className="hidden lg:inline">{d}</span>
                 {i === today && (
-                  <span className="rounded-full bg-terracotta px-1.5 py-0.5 text-[10px] font-semibold text-sheet">
+                  <span className="rounded-full bg-terracotta px-1.5 py-0.5 text-[11px] leading-none font-semibold text-sheet">
                     วันนี้
                   </span>
                 )}
@@ -578,7 +593,7 @@ export function PlannerBoard() {
                           </span>
                           <span
                             className={cn(
-                              "rounded px-1 py-0.2 text-[9px] font-bold uppercase shrink-0",
+                              "rounded px-1.5 py-0.5 text-[11px] leading-none font-bold shrink-0",
                               isClass
                                 ? "bg-terracotta/25 text-terracotta-deep"
                                 : "bg-sage/25 text-sage-deep"
@@ -588,14 +603,14 @@ export function PlannerBoard() {
                           </span>
                         </div>
 
-                        {isClass && b.location && (
-                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[10px] opacity-90">
+                        {isClass && b.location && heightRem >= 4.2 && (
+                          <span className="mt-0.5 inline-flex items-center gap-1 truncate font-mono text-[11px] opacity-90">
                             <MapPin className="h-3 w-3 shrink-0" />
                             <span className="truncate">{b.location}</span>
                           </span>
                         )}
 
-                        {b.topic && (
+                        {b.topic && heightRem >= 3.5 && (
                           <span className="inline-flex items-center gap-1 truncate opacity-90 text-[11px]">
                             {!isClass && chapterDone && (
                               <Check className="h-3 w-3 shrink-0 text-sage" strokeWidth={3} />
@@ -604,8 +619,8 @@ export function PlannerBoard() {
                           </span>
                         )}
 
-                        {heightRem >= 2.5 && (
-                          <span className="mt-auto font-mono text-[10px] opacity-75">
+                        {heightRem >= 3 && (
+                          <span className="mt-auto font-mono text-[11px] opacity-75">
                             {formatBlockTime(b)}
                           </span>
                         )}
@@ -615,39 +630,6 @@ export function PlannerBoard() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-end gap-2">
-          {confirmingReset ? (
-            <div className="flex items-center gap-2 rounded-lg border border-slate/30 bg-slate-tint px-3 py-1.5 text-xs text-slate-deep">
-              <span>รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  dispatch({ type: "reset" });
-                  setConfirmingReset(false);
-                }}
-                className="rounded bg-slate px-2 py-0.5 font-semibold text-sheet hover:bg-slate-deep"
-              >
-                ยืนยัน
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingReset(false)}
-                className="font-medium text-ink-soft hover:text-ink"
-              >
-                ยกเลิก
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmingReset(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink"
-            >
-              <RotateCcw className="h-3.5 w-3.5" /> รีเซ็ตเป็นข้อมูลตัวอย่าง
-            </button>
-          )}
         </div>
       </div>
 

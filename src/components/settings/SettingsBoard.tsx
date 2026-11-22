@@ -12,7 +12,7 @@ import {
   Loader2,
   Lock,
   Mail,
-  Palette,
+  RotateCcw,
   Sparkles,
   Trash2,
   Upload,
@@ -22,6 +22,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/ui/field";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useStudyStore } from "@/hooks/use-study-store";
 import { PRESET_AVATARS } from "@/lib/avatars";
 import { formatThaiDate } from "@/lib/study";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,8 @@ function compressImage(file: File, maxSize = 256): Promise<string> {
 
 export function SettingsBoard() {
   const { data: session, update, status } = useSession();
+  const { dispatch } = useStudyStore();
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const [name, setName] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -253,7 +256,7 @@ export function SettingsBoard() {
                 "flex items-center gap-2.5 rounded-xl border p-4 text-sm font-medium transition-all",
                 statusMsg.type === "success"
                   ? "border-sage/40 bg-sage-tint text-sage-deep"
-                  : "border-slate/40 bg-slate-tint text-slate-deep"
+                  : "border-danger/40 bg-danger-tint text-danger-deep"
               )}
             >
               {statusMsg.type === "success" ? (
@@ -283,7 +286,7 @@ export function SettingsBoard() {
                   <button
                     type="button"
                     onClick={() => setImage(null)}
-                    className="inline-flex items-center gap-1 text-xs text-slate hover:text-slate-deep"
+                    className="inline-flex items-center gap-1 text-xs text-danger hover:text-danger-deep"
                   >
                     <Trash2 className="h-3 w-3" /> ลบรูปภาพ
                   </button>
@@ -292,9 +295,15 @@ export function SettingsBoard() {
 
               {/* Avatar Chooser Tabs */}
               <div className="flex-1 w-full space-y-4">
-                <div className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs font-semibold">
+                <div
+                  role="tablist"
+                  aria-label="วิธีเลือกรูปโปรไฟล์"
+                  className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs font-semibold"
+                >
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={avatarTab === "presets"}
                     onClick={() => setAvatarTab("presets")}
                     className={cn(
                       "flex-1 rounded-lg py-1.5 transition-colors",
@@ -310,6 +319,8 @@ export function SettingsBoard() {
                   </button>
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={avatarTab === "upload"}
                     onClick={() => setAvatarTab("upload")}
                     className={cn(
                       "flex-1 rounded-lg py-1.5 transition-colors",
@@ -325,6 +336,8 @@ export function SettingsBoard() {
                   </button>
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={avatarTab === "url"}
                     onClick={() => setAvatarTab("url")}
                     className={cn(
                       "flex-1 rounded-lg py-1.5 transition-colors",
@@ -466,15 +479,15 @@ export function SettingsBoard() {
               hint="อีเมลที่ใช้สำหรับเข้าสู่ระบบ (ไม่สามารถแก้ไขได้)"
             >
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-ink-muted" />
+                <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-muted" />
                 <input
                   id="profile-email"
                   type="email"
                   value={session?.user?.email || ""}
                   disabled
-                  className={cn(inputClass, "pl-9 cursor-not-allowed bg-paper text-ink-muted")}
+                  className={cn(inputClass, "pl-9 pr-9 cursor-not-allowed bg-paper text-ink-muted")}
                 />
-                <Lock className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-ink-muted" />
+                <Lock className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-ink-muted" />
               </div>
             </Field>
 
@@ -585,6 +598,57 @@ export function SettingsBoard() {
             </Button>
           </div>
         </form>
+
+        {/* Section 4: Danger Zone — Data Reset */}
+        <section className="mt-8 rounded-2xl border border-danger/30 bg-sheet p-6 shadow-2xs">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="flex items-center gap-2 font-display text-lg font-bold text-danger-deep">
+                <RotateCcw className="h-5 w-5 text-danger" />
+                รีเซ็ตข้อมูลการเรียนทั้งหมด
+              </h2>
+              <p className="mt-1 text-xs text-ink-soft">
+                ล้างรายวิชา บทเรียน ตารางเวลา และวันสอบทั้งหมดกลับเป็นชุดข้อมูลตัวอย่างเริ่มต้น (ไม่สามารถย้อนกลับได้)
+              </p>
+            </div>
+
+            {confirmingReset ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-danger hover:bg-danger-deep"
+                  onClick={() => {
+                    dispatch({ type: "reset" });
+                    setConfirmingReset(false);
+                    setStatusMsg({ type: "success", text: "รีเซ็ตข้อมูลการเรียนกลับเป็นค่าเริ่มต้นแล้ว" });
+                  }}
+                >
+                  ยืนยันรีเซ็ตทั้งหมด
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmingReset(false)}
+                >
+                  ยกเลิก
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-danger/35 text-danger-deep hover:bg-danger-tint"
+                onClick={() => setConfirmingReset(true)}
+              >
+                <RotateCcw className="h-4 w-4" />
+                รีเซ็ตเป็นข้อมูลตัวอย่าง
+              </Button>
+            )}
+          </div>
+        </section>
       </div>
     </>
   );

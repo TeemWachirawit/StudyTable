@@ -43,7 +43,37 @@ const blocks: { day: number; start: number; span: number; subject: SubjectKey; l
   { day: 7, start: 2, span: 1, subject: "bio", label: "ทบทวน" },
 ];
 
-export function PlannerPreview({ className }: { className?: string }) {
+const classStudyBlocks: {
+  day: number;
+  start: number;
+  span: number;
+  subject: SubjectKey;
+  label: string;
+  kind: "เรียน" | "อ่าน";
+}[] = [
+  { day: 1, start: 0, span: 2, subject: "math", label: "คาบแคลคูลัส", kind: "เรียน" },
+  { day: 1, start: 3, span: 1, subject: "math", label: "ทบทวนบท 3", kind: "อ่าน" },
+  { day: 2, start: 0, span: 2, subject: "physics", label: "แล็บไฟฟ้า", kind: "เรียน" },
+  { day: 3, start: 1, span: 2, subject: "bio", label: "พันธุศาสตร์", kind: "เรียน" },
+  { day: 3, start: 4, span: 1, subject: "bio", label: "สรุปโน้ต", kind: "อ่าน" },
+  { day: 4, start: 0, span: 1, subject: "english", label: "Essay Class", kind: "เรียน" },
+  { day: 4, start: 2, span: 2, subject: "physics", label: "โจทย์ไฟฟ้า", kind: "อ่าน" },
+  { day: 5, start: 1, span: 2, subject: "english", label: "Reading", kind: "อ่าน" },
+  { day: 6, start: 1, span: 3, subject: "math", label: "ติวข้อสอบเก่า", kind: "อ่าน" },
+  { day: 7, start: 2, span: 2, subject: "bio", label: "ทบทวนก่อนสอบ", kind: "อ่าน" },
+];
+
+export function PlannerPreview({
+  className,
+  variant = "study",
+}: {
+  className?: string;
+  variant?: "study" | "mixed";
+}) {
+  const activeBlocks = variant === "mixed" ? classStudyBlocks : blocks;
+  const headerTitle = variant === "mixed" ? "ตารางเรียน + อ่านหนังสือ" : "สัปดาห์ที่ 3 · พ.ย.";
+  const headerBadge = variant === "mixed" ? "เรียน 7 ชม. · อ่าน 11 ชม." : "17 ชม. วางแผนไว้";
+
   return (
     <div
       className={cn(
@@ -56,10 +86,10 @@ export function PlannerPreview({ className }: { className?: string }) {
       <div className="flex items-center justify-between border-b border-line bg-sheet px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-terracotta" />
-          <span className="text-sm font-semibold text-ink">สัปดาห์ที่ 3 · พ.ย.</span>
+          <span className="text-sm font-semibold text-ink">{headerTitle}</span>
         </div>
         <span className="rounded-full bg-terracotta-tint px-2.5 py-0.5 font-mono text-xs font-medium text-terracotta-deep">
-          17 ชม. วางแผนไว้
+          {headerBadge}
         </span>
       </div>
 
@@ -115,7 +145,7 @@ export function PlannerPreview({ className }: { className?: string }) {
         ))}
 
         {/* study blocks */}
-        {blocks.map((b, i) => (
+        {activeBlocks.map((b, i) => (
           <div
             key={i}
             className={cn(
@@ -127,7 +157,7 @@ export function PlannerPreview({ className }: { className?: string }) {
             <span className="block truncate font-semibold">{b.label}</span>
             {b.span > 1 && (
               <span className="mt-0.5 hidden truncate text-[10px] opacity-80 sm:block">
-                {subjects[b.subject].name}
+                {"kind" in b ? `${b.kind} · ${subjects[b.subject].name}` : subjects[b.subject].name}
               </span>
             )}
           </div>

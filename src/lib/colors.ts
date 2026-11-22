@@ -69,6 +69,16 @@ export function isPresetColor(color: string): color is PresetSubjectColor {
   return color in SUBJECT_COLORS;
 }
 
+/** Returns true if a #RRGGBB hex color has high perceived luminance (needs dark foreground). */
+export function isLightHex(hex: string): boolean {
+  const clean = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : "#2563eb";
+  const r = parseInt(clean.slice(1, 3), 16) / 255;
+  const g = parseInt(clean.slice(3, 5), 16) / 255;
+  const b = parseInt(clean.slice(5, 7), 16) / 255;
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return lum > 0.62;
+}
+
 export function getSubjectColor(color: SubjectColor): ResolvedSubjectColor {
   if (isPresetColor(color)) {
     const preset = SUBJECT_COLORS[color];
@@ -86,6 +96,8 @@ export function getSubjectColor(color: SubjectColor): ResolvedSubjectColor {
   const matchedExtra = EXTRA_PRESET_HEX.find(
     (p) => p.hex.toLowerCase() === validHex.toLowerCase()
   );
+  const light = isLightHex(validHex);
+  const textMixPct = light ? "45%" : "72%";
 
   return {
     hex: validHex,
@@ -95,15 +107,15 @@ export function getSubjectColor(color: SubjectColor): ResolvedSubjectColor {
     solidClass: "",
     textClass: "",
     blockStyle: {
-      backgroundColor: `color-mix(in srgb, ${validHex} 12%, #ffffff)`,
-      borderColor: `color-mix(in srgb, ${validHex} 35%, transparent)`,
-      color: `color-mix(in srgb, ${validHex} 78%, #0f172a)`,
+      backgroundColor: `color-mix(in srgb, ${validHex} ${light ? "18%" : "12%"}, #ffffff)`,
+      borderColor: `color-mix(in srgb, ${validHex} ${light ? "50%" : "35%"}, transparent)`,
+      color: `color-mix(in srgb, ${validHex} ${textMixPct}, #0f172a)`,
     },
     solidStyle: {
       backgroundColor: validHex,
     },
     textStyle: {
-      color: `color-mix(in srgb, ${validHex} 82%, #0f172a)`,
+      color: `color-mix(in srgb, ${validHex} ${textMixPct}, #0f172a)`,
     },
   };
 }

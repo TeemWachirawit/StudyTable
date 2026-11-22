@@ -90,8 +90,11 @@ export function NavLinks({ className }: { className?: string }) {
   );
 }
 
+const PUBLIC_ROUTES = new Set(["/", "/signin", "/signup"]);
+
 export function MobileBottomNav() {
   const pathname = usePathname();
+  if (PUBLIC_ROUTES.has(pathname)) return null;
 
   return (
     <nav
@@ -155,10 +158,19 @@ export function NavbarStatusOrCta() {
         setMenuOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+      }
+    }
     if (menuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [menuOpen]);
 
   useEffect(() => {
@@ -236,7 +248,7 @@ export function NavbarStatusOrCta() {
         </span>
       )}
       {syncStatus === "error" && (
-        <span className="inline-flex items-center gap-1 text-slate-deep" title="ยังไม่ได้ซิงค์ฐานข้อมูล">
+        <span className="inline-flex items-center gap-1 text-danger-deep" title="ยังไม่ได้ซิงค์ฐานข้อมูล">
           <CloudAlert className="h-3.5 w-3.5" />
         </span>
       )}
@@ -245,7 +257,9 @@ export function NavbarStatusOrCta() {
         <button
           type="button"
           onClick={() => setMenuOpen((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper p-1 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep sm:gap-2 sm:py-1 sm:pr-3 sm:pl-1.5"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper p-1 text-xs font-semibold whitespace-nowrap text-ink transition-colors hover:bg-paper-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:gap-2 sm:py-1 sm:pr-3 sm:pl-1.5"
           aria-label="เมนูบัญชีผู้ใช้"
         >
           <UserAvatar image={displayImage} name={displayName} size="sm" />
@@ -253,7 +267,10 @@ export function NavbarStatusOrCta() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-52 rounded-xl border border-line-strong bg-sheet p-1.5 shadow-md">
+          <div
+            role="menu"
+            className="absolute right-0 mt-2 w-52 rounded-xl border border-line-strong bg-sheet p-1.5 shadow-md"
+          >
             <div className="flex items-center gap-2.5 border-b border-line px-2.5 py-2.5">
               <UserAvatar image={displayImage} name={displayName} size="md" />
               <div className="min-w-0 flex-1">
@@ -269,6 +286,7 @@ export function NavbarStatusOrCta() {
             <div className="mt-1 space-y-0.5">
               <Link
                 href="/settings"
+                role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-ink transition-colors hover:bg-paper-deep"
               >
@@ -277,6 +295,7 @@ export function NavbarStatusOrCta() {
               </Link>
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   try {
                     if (session.user?.id) {
@@ -287,7 +306,7 @@ export function NavbarStatusOrCta() {
                   }
                   signOut({ callbackUrl: "/" });
                 }}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-slate-deep transition-colors hover:bg-slate-tint"
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-danger-deep transition-colors hover:bg-danger-tint"
               >
                 <LogOut className="h-3.5 w-3.5 shrink-0" />
                 ออกจากระบบ

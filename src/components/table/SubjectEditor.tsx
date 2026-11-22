@@ -10,6 +10,7 @@ import {
   EXTRA_PRESET_HEX,
   SUBJECT_COLORS,
   getSubjectColor,
+  isLightHex,
   isPresetColor,
   type SubjectColor,
 } from "@/lib/colors";
@@ -52,7 +53,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-slate hover:bg-slate-deep"
+                    className="bg-danger hover:bg-danger-deep"
                     onClick={onDelete}
                   >
                     ยืนยันลบวิชา
@@ -65,7 +66,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                  className="text-danger-deep hover:bg-danger-tint hover:text-danger-deep"
                   onClick={() => setConfirmingDelete(true)}
                 >
                   <Trash2 className="h-4 w-4" /> ลบวิชา
@@ -229,7 +230,12 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
                   onChange={(e) => setColor(e.target.value)}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-                <Palette className="h-4 w-4 text-white drop-shadow-xs" />
+                <Palette
+                  className={cn(
+                    "h-4 w-4",
+                    isLightHex(resolved.hex) ? "text-ink" : "text-white drop-shadow-xs"
+                  )}
+                />
               </label>
               <div>
                 <p className="text-xs font-semibold text-ink">เลือกสีตามต้องการ (Custom Color)</p>
@@ -258,7 +264,7 @@ export function SubjectEditor({ subject, onClose, onSave, onDelete }: Props) {
         {confirmingDelete && (
           <p
             role="alert"
-            className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-xs text-slate-deep"
+            className="rounded-lg border border-danger/30 bg-danger-tint px-3 py-2 text-xs text-danger-deep"
           >
             การลบวิชา &ldquo;{subject?.name}&rdquo; จะลบตารางอ่านและรายการสอบของวิชานี้ทั้งหมดด้วย
           </p>

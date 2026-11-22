@@ -216,7 +216,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-slate hover:bg-slate-deep"
+                    className="bg-danger hover:bg-danger-deep"
                     onClick={() => onDelete(form.id)}
                   >
                     ยืนยันลบ
@@ -230,7 +230,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
                   variant="ghost"
                   size="sm"
                   onClick={() => setConfirmingDelete(true)}
-                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                  className="text-danger-deep hover:bg-danger-tint hover:text-danger-deep"
                 >
                   <Trash2 className="h-4 w-4" /> ลบ
                 </Button>
@@ -472,7 +472,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
         {error && (
           <p
             role="alert"
-            className="rounded-lg border border-slate/30 bg-slate-tint px-3 py-2 text-sm text-slate-deep"
+            className="rounded-lg border border-danger/30 bg-danger-tint px-3 py-2 text-sm text-danger-deep"
           >
             {error}
           </p>

@@ -58,7 +58,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-slate hover:bg-slate-deep"
+                    className="bg-danger hover:bg-danger-deep"
                     onClick={() => onDelete(form.id)}
                   >
                     ยืนยันลบ
@@ -71,7 +71,7 @@ export function ExamEditor({ draft, isNew, subjects, onClose, onSave, onDelete }
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-deep hover:bg-slate-tint hover:text-slate-deep"
+                  className="text-danger-deep hover:bg-danger-tint hover:text-danger-deep"
                   onClick={() => setConfirmingDelete(true)}
                 >
                   <Trash2 className="h-4 w-4" /> ลบ

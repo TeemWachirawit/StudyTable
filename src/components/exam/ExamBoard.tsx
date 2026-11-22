@@ -15,7 +15,7 @@ import { SubjectEditor } from "@/components/table/SubjectEditor";
 
 function urgencyStyle(days: number) {
   if (days < 0) return "border-line bg-paper-deep text-ink-muted";
-  if (days <= 3) return "border-slate/30 bg-slate-tint text-slate-deep";
+  if (days <= 3) return "border-danger/30 bg-danger-tint text-danger-deep";
   if (days <= 7) return "border-mustard/35 bg-mustard-tint text-mustard-deep";
   return "border-terracotta/25 bg-terracotta-tint text-terracotta-deep";
 }
@@ -109,38 +109,32 @@ export function ExamBoard() {
             {/* Quick summary stats strip */}
             {stats && (
               <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
-                  <div>
-                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">การสอบถัดไป</dt>
-                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
-                      {stats.nextDays === 0 ? "วันนี้" : `อีก ${stats.nextDays} วัน`}
-                    </dd>
-                  </div>
-                  <span className="rounded-full border border-mustard/35 bg-mustard-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-mustard-deep">
-                    Next Exam
-                  </span>
+                <div className="rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <dt className="flex items-center gap-2 text-xs font-medium text-ink-muted sm:text-sm">
+                    <span className="h-2 w-2 rounded-full bg-mustard" aria-hidden="true" />
+                    การสอบถัดไป
+                  </dt>
+                  <dd className="mt-1.5 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                    {stats.nextDays === 0 ? "วันนี้" : `อีก ${stats.nextDays} วัน`}
+                  </dd>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
-                  <div>
-                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">ความพร้อมเฉลี่ย</dt>
-                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
-                      {stats.avgReadiness}%
-                    </dd>
-                  </div>
-                  <span className="rounded-full border border-sage/25 bg-sage-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-sage-deep">
-                    Readiness
-                  </span>
+                <div className="rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <dt className="flex items-center gap-2 text-xs font-medium text-ink-muted sm:text-sm">
+                    <span className="h-2 w-2 rounded-full bg-sage" aria-hidden="true" />
+                    ความพร้อมเฉลี่ย
+                  </dt>
+                  <dd className="mt-1.5 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                    {stats.avgReadiness}%
+                  </dd>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
-                  <div>
-                    <dt className="text-xs font-medium text-ink-muted sm:text-sm">การสอบที่รออยู่</dt>
-                    <dd className="mt-1 font-mono text-2xl font-semibold text-ink sm:text-3xl">
-                      {stats.totalUpcoming} วิชา
-                    </dd>
-                  </div>
-                  <span className="rounded-full border border-terracotta/25 bg-terracotta-tint px-2.5 py-1 font-mono text-[11px] font-semibold text-terracotta-deep">
-                    Upcoming
-                  </span>
+                <div className="rounded-xl border border-line-strong bg-sheet px-5 py-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
+                  <dt className="flex items-center gap-2 text-xs font-medium text-ink-muted sm:text-sm">
+                    <span className="h-2 w-2 rounded-full bg-terracotta" aria-hidden="true" />
+                    การสอบที่รออยู่
+                  </dt>
+                  <dd className="mt-1.5 font-mono text-2xl font-semibold text-ink sm:text-3xl">
+                    {stats.totalUpcoming} วิชา
+                  </dd>
                 </div>
               </dl>
             )}
@@ -333,8 +327,9 @@ function ExamRow({
               {exam.extraTopics.map((t) => (
                 <li
                   key={t}
-                  className="inline-flex items-center rounded-lg border border-dashed border-line-strong bg-paper/60 px-2.5 py-1 text-xs text-ink-soft"
+                  className="inline-flex items-center gap-1 rounded-full bg-paper-deep/80 px-2.5 py-1 text-xs text-ink-muted"
                 >
+                  <span aria-hidden="true">•</span>
                   {t}
                 </li>
               ))}
@@ -351,7 +346,14 @@ function ExamRow({
               </span>
               <span className="font-mono font-semibold text-ink">{readiness.pct}%</span>
             </div>
-            <div className="h-2 rounded-full bg-paper-deep">
+            <div
+              className="h-2 rounded-full bg-paper-deep"
+              role="progressbar"
+              aria-valuenow={readiness.pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`ความพร้อมสอบ ${exam.title}`}
+            >
               <div
                 className={cn(
                   "h-2 rounded-full transition-[width]",

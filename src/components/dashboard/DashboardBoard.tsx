@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
-import { getSubjectColor } from "@/lib/colors";
+import { getSubjectColor, isLightHex } from "@/lib/colors";
 import {
   DAYS,
   DAYS_SHORT,
@@ -57,6 +57,8 @@ export function DashboardBoard() {
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [dayFilter, setDayFilter] = useState<number | "all">("all");
   const [blockTypeFilter, setBlockTypeFilter] = useState<"all" | "class" | "study">("all");
+  const [confirmDeleteBlockId, setConfirmDeleteBlockId] = useState<string | null>(null);
+  const [confirmDeleteExamId, setConfirmDeleteExamId] = useState<string | null>(null);
 
   const subjectById = useMemo(
     () => new Map(state.subjects.map((s) => [s.id, s])),
@@ -161,7 +163,7 @@ export function DashboardBoard() {
   const header = (
     <PageHeader
       eyebrow="Dashboard"
-      tone="sky"
+      tone="plum"
       title="แดชบอร์ดภาพรวมและจัดการข้อมูล"
       description="ดูแผนภูมิสัดส่วนชั่วโมงเรียน ความคืบหน้าแต่ละรายวิชา และแก้ไขวิชา สี บทเรียน ตารางเวลา หรือวันสอบได้ในหน้าเดียว"
       actions={
@@ -170,14 +172,8 @@ export function DashboardBoard() {
             <Button variant="outline" size="sm" onClick={() => setEditingSubject("new")}>
               <BookPlus className="h-4 w-4" /> เพิ่มวิชา
             </Button>
-            <Button variant="outline" size="sm" onClick={() => openNewBlock("class")}>
-              <GraduationCap className="h-4 w-4 text-terracotta" /> +ตารางเรียน
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => openNewBlock("study")}>
-              <BookOpen className="h-4 w-4 text-sage" /> +ตารางอ่าน
-            </Button>
-            <Button size="sm" onClick={openNewExam}>
-              <Plus className="h-4 w-4" /> เพิ่มการสอบ
+            <Button size="sm" onClick={() => openNewBlock("study")}>
+              <Plus className="h-4 w-4" /> เพิ่มช่วงเวลา
             </Button>
           </>
         ) : undefined
@@ -216,22 +212,19 @@ export function DashboardBoard() {
             label="เวลาเรียนและอ่านรวม"
             value={`${analytics.totalHours} ชม.`}
             sub={`เรียน ${analytics.classHours} ชม. · อ่าน ${analytics.studyHours} ชม.`}
-            badge="Planner"
-            toneClass="border-terracotta/25 bg-terracotta-tint text-terracotta-deep"
+            dotClass="bg-terracotta"
           />
           <KpiCard
             label="ความคืบหน้าบทเรียนรวม"
             value={`${analytics.overallPct}%`}
             sub={`อ่านจบแล้ว ${analytics.doneChapters} จาก ${analytics.totalChapters} บท`}
-            badge="Chapters"
-            toneClass="border-sage/25 bg-sage-tint text-sage-deep"
+            dotClass="bg-sage"
           />
           <KpiCard
             label="รายวิชาทั้งหมด"
             value={`${state.subjects.length} วิชา`}
             sub="คลิกที่สีวิชาเพื่อเปลี่ยนสีได้ทันที"
-            badge="Subjects"
-            toneClass="border-plum/25 bg-plum-tint text-plum-deep"
+            dotClass="bg-plum"
           />
           <KpiCard
             label="การสอบที่กำลังจะมาถึง"
@@ -241,8 +234,7 @@ export function DashboardBoard() {
                 ? `สอบถัดไปในอีก ${daysUntil(analytics.upcomingExams[0].date)} วัน`
                 : "ยังไม่มีกำหนดสอบใหม่"
             }
-            badge="Exams"
-            toneClass="border-mustard/35 bg-mustard-tint text-mustard-deep"
+            dotClass="bg-mustard"
           />
         </dl>
 
@@ -285,11 +277,11 @@ export function DashboardBoard() {
                     totalHours={analytics.totalHours}
                   />
 
-                  <ul className="space-y-2.5">
+                  <ul className="divide-y divide-line">
                     {analytics.subjectStats.map(({ subject, hours, hourSharePct, color }) => (
                       <li
                         key={subject.id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-3.5 py-2 text-sm"
+                        className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0"
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
                           {subject.emoji ? (
@@ -316,7 +308,7 @@ export function DashboardBoard() {
                   <p className="mb-3 font-mono text-xs font-semibold tracking-wide text-ink-muted uppercase">
                     ชั่วโมงอ่านหนังสือรายวัน (จันทร์–อาทิตย์)
                   </p>
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1.5">
                     {analytics.hoursByDay.map(({ dayName, dayIdx, hours }) => {
                       const heightPct =
                         hours > 0 ? Math.max(18, Math.round((hours / analytics.maxDayHours) * 100)) : 0;
@@ -324,7 +316,10 @@ export function DashboardBoard() {
                       return (
                         <div
                           key={dayName}
-                          className="flex flex-col items-center rounded-xl border border-line bg-paper px-1.5 py-2.5"
+                          className={cn(
+                            "flex flex-col items-center rounded-lg px-1 py-2",
+                            isToday && "bg-terracotta-tint/50"
+                          )}
                         >
                           <span className="font-mono text-[11px] font-semibold text-ink">
                             {hours > 0 ? `${hours}ชม.` : "–"}
@@ -423,7 +418,7 @@ export function DashboardBoard() {
               {analytics.upcomingExams.length === 0 ? (
                 <p className="text-xs text-ink-muted">ไม่มีการสอบที่กำลังจะมาถึง</p>
               ) : (
-                <ul className="space-y-2.5">
+                <ul className="divide-y divide-line">
                   {analytics.upcomingExams.slice(0, 3).map((exam) => {
                     const subj = subjectById.get(exam.subjectId);
                     const color = subj ? getSubjectColor(subj.color) : getSubjectColor("terracotta");
@@ -432,7 +427,7 @@ export function DashboardBoard() {
                     return (
                       <li
                         key={exam.id}
-                        className="rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs"
+                        className="py-2.5 text-xs first:pt-0 last:pb-0"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
@@ -449,7 +444,14 @@ export function DashboardBoard() {
                           </span>
                         </div>
                         <div className="mt-2 flex items-center gap-2.5">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-deep">
+                          <div
+                            className="h-1.5 flex-1 overflow-hidden rounded-full bg-paper-deep"
+                            role="progressbar"
+                            aria-valuenow={readiness.pct}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-label={`ความพร้อมสอบ ${exam.title}`}
+                          >
                             <div
                               className="h-full rounded-full transition-all"
                               style={{
@@ -483,9 +485,15 @@ export function DashboardBoard() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-paper p-1">
+            <div
+              role="tablist"
+              aria-label="หมวดหมู่ข้อมูล"
+              className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-paper p-1"
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === "subjects"}
                 onClick={() => setActiveTab("subjects")}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
@@ -499,6 +507,8 @@ export function DashboardBoard() {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === "schedule"}
                 onClick={() => setActiveTab("schedule")}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
@@ -512,6 +522,8 @@ export function DashboardBoard() {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === "exams"}
                 onClick={() => setActiveTab("exams")}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
@@ -690,7 +702,7 @@ export function DashboardBoard() {
                             </span>
                             <span
                               className={cn(
-                                "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase shrink-0",
+                                "rounded px-1.5 py-0.5 text-[11px] font-bold shrink-0",
                                 isClass
                                   ? "bg-terracotta/20 text-terracotta-deep"
                                   : "bg-sage/20 text-sage-deep"
@@ -710,22 +722,47 @@ export function DashboardBoard() {
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2.5 text-xs"
-                              onClick={() => setEditingBlock(block)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" /> แก้ไข
-                            </Button>
-                            <button
-                              type="button"
-                              onClick={() => dispatch({ type: "deleteBlock", id: block.id })}
-                              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-slate-tint hover:text-slate-deep"
-                              aria-label="ลบช่วงเวลา"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {confirmDeleteBlockId === block.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="h-8 bg-danger px-2.5 text-xs hover:bg-danger-deep"
+                                  onClick={() => {
+                                    dispatch({ type: "deleteBlock", id: block.id });
+                                    setConfirmDeleteBlockId(null);
+                                  }}
+                                >
+                                  ยืนยันลบ
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 text-xs"
+                                  onClick={() => setConfirmDeleteBlockId(null)}
+                                >
+                                  ยกเลิก
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 px-2.5 text-xs"
+                                  onClick={() => setEditingBlock(block)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" /> แก้ไข
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteBlockId(block.id)}
+                                  className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger-deep"
+                                  aria-label="ลบช่วงเวลา"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );
@@ -804,22 +841,47 @@ export function DashboardBoard() {
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2.5 text-xs"
-                              onClick={() => setEditingExam(exam)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" /> แก้ไข
-                            </Button>
-                            <button
-                              type="button"
-                              onClick={() => dispatch({ type: "deleteExam", id: exam.id })}
-                              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-slate-tint hover:text-slate-deep"
-                              aria-label="ลบการสอบ"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {confirmDeleteExamId === exam.id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="h-8 bg-danger px-2.5 text-xs hover:bg-danger-deep"
+                                  onClick={() => {
+                                    dispatch({ type: "deleteExam", id: exam.id });
+                                    setConfirmDeleteExamId(null);
+                                  }}
+                                >
+                                  ยืนยันลบ
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2 text-xs"
+                                  onClick={() => setConfirmDeleteExamId(null)}
+                                >
+                                  ยกเลิก
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 px-2.5 text-xs"
+                                  onClick={() => setEditingExam(exam)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" /> แก้ไข
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteExamId(exam.id)}
+                                  className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger-deep"
+                                  aria-label="ลบการสอบ"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );
@@ -904,28 +966,19 @@ function KpiCard({
   label,
   value,
   sub,
-  badge,
-  toneClass,
+  dotClass,
 }: {
   label: string;
   value: string;
   sub: string;
-  badge: string;
-  toneClass: string;
+  dotClass: string;
 }) {
   return (
     <div className="flex flex-col justify-between rounded-xl border border-line-strong bg-sheet p-5 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.1)]">
-      <div className="flex items-start justify-between gap-2">
-        <dt className="text-xs font-medium text-ink-muted">{label}</dt>
-        <span
-          className={cn(
-            "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold",
-            toneClass
-          )}
-        >
-          {badge}
-        </span>
-      </div>
+      <dt className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+        <span className={cn("h-2 w-2 rounded-full", dotClass)} aria-hidden="true" />
+        {label}
+      </dt>
       <dd className="mt-2 font-mono text-2xl font-bold text-ink sm:text-3xl">{value}</dd>
       <p className="mt-1.5 text-xs text-ink-soft">{sub}</p>
     </div>
@@ -944,8 +997,12 @@ function DonutChart({
   let accumulated = 0;
 
   return (
-    <div className="relative mx-auto flex h-44 w-44 items-center justify-center">
-      <svg viewBox="0 0 150 150" className="h-full w-full -rotate-90">
+    <div
+      className="relative mx-auto flex h-44 w-44 items-center justify-center"
+      role="img"
+      aria-label={`แผนภูมิสัดส่วนชั่วโมงเรียน รวม ${totalHours} ชั่วโมงต่อสัปดาห์`}
+    >
+      <svg viewBox="0 0 150 150" className="h-full w-full -rotate-90" aria-hidden="true">
         <circle
           cx="75"
           cy="75"
@@ -1033,7 +1090,12 @@ function DashboardSubjectCard({
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               aria-label={`เปลี่ยนสีวิชา ${subject.name}`}
             />
-            <Palette className="h-3 w-3 text-white opacity-85" />
+            <Palette
+              className={cn(
+                "h-3 w-3 opacity-85",
+                isLightHex(color.hex) ? "text-ink" : "text-white"
+              )}
+            />
           </label>
           <div className="min-w-0">
             <h3 className="truncate font-display text-base font-bold text-ink">
@@ -1051,8 +1113,31 @@ function DashboardSubjectCard({
         </Button>
       </div>
 
+      {/* Quick Add Chapter on top (consistent with StudyDesk) */}
+      <form
+        className="flex gap-2 border-b border-line bg-paper/60 px-4 py-2.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = newChapter.trim();
+          if (!trimmed) return;
+          dispatch({ type: "addChapter", subjectId: subject.id, title: trimmed });
+          setNewChapter("");
+        }}
+      >
+        <input
+          className={cn(inputClass, "h-8 bg-sheet text-xs")}
+          placeholder="+ เพิ่มบทเรียนใหม่..."
+          value={newChapter}
+          onChange={(e) => setNewChapter(e.target.value)}
+          aria-label={`เพิ่มบทเรียนในวิชา ${subject.name}`}
+        />
+        <Button type="submit" size="sm" variant="outline" className="h-8 px-2.5 text-xs" disabled={!newChapter.trim()}>
+          <Plus className="h-3.5 w-3.5" /> เพิ่ม
+        </Button>
+      </form>
+
       {/* Chapters list */}
-      <ul className="max-h-56 divide-y divide-line/60 overflow-y-auto">
+      <ul className="divide-y divide-line/60">
         {subject.chapters.length === 0 ? (
           <li className="px-4 py-4 text-xs text-ink-muted">ยังไม่มีบทเรียนในวิชานี้</li>
         ) : (
@@ -1122,7 +1207,7 @@ function DashboardSubjectCard({
                     onClick={() =>
                       dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })
                     }
-                    className="rounded p-1 text-ink-muted hover:bg-slate-tint hover:text-slate-deep"
+                    className="rounded p-1 text-ink-muted hover:bg-danger-tint hover:text-danger-deep"
                     aria-label="ลบบทเรียน"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -1133,27 +1218,6 @@ function DashboardSubjectCard({
           ))
         )}
       </ul>
-
-      <form
-        className="flex gap-2 border-t border-line bg-paper px-4 py-2.5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = newChapter.trim();
-          if (!trimmed) return;
-          dispatch({ type: "addChapter", subjectId: subject.id, title: trimmed });
-          setNewChapter("");
-        }}
-      >
-        <input
-          className={cn(inputClass, "h-8 text-xs")}
-          placeholder="เพิ่มบทเรียนใหม่..."
-          value={newChapter}
-          onChange={(e) => setNewChapter(e.target.value)}
-        />
-        <Button type="submit" size="sm" variant="outline" className="h-8 px-2.5 text-xs" disabled={!newChapter.trim()}>
-          <Plus className="h-3.5 w-3.5" /> เพิ่ม
-        </Button>
-      </form>
     </div>
   );
 }

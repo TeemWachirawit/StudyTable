@@ -32,13 +32,16 @@
   --color-mustard-deep: #92400e;
   --color-mustard-tint: #fffbeb;
 
-  /* Supporting Subject Accent 4: Soft Rose / Coral */
+  /* Supporting Subject Accent 4: Soft Rose / Coral + Semantic Danger */
   --color-slate: #e11d48;
   --color-slate-deep: #9f1239;
   --color-slate-tint: #fff1f2;
   --color-rose: #e11d48;
   --color-rose-deep: #9f1239;
   --color-rose-tint: #fff1f2;
+  --color-danger: #e11d48;
+  --color-danger-deep: #9f1239;
+  --color-danger-tint: #fff1f2;
 
   /* Supporting Subject Accent 5: Soft Violet / Lavender */
   --color-plum: #7c3aed;
