@@ -11,6 +11,7 @@ import {
   CloudAlert,
   Hourglass,
   LayoutDashboard,
+  Library,
   Loader2,
   LogOut,
   Settings,
@@ -37,6 +38,14 @@ export const navLinks = [
     dot: "bg-sage",
     activeClass: "bg-sage-tint text-sage-deep border-sage/30",
     activeMobile: "text-sage-deep bg-sage-tint/70",
+  },
+  {
+    href: "/library",
+    label: "Library",
+    icon: Library,
+    dot: "bg-slate",
+    activeClass: "bg-slate-tint text-slate-deep border-slate/30",
+    activeMobile: "text-slate-deep bg-slate-tint/70",
   },
   {
     href: "/exam",
@@ -101,7 +110,7 @@ export function MobileBottomNav() {
       aria-label="เมนูหลักสำหรับมือถือ"
       className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-sheet/95 backdrop-blur-md pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 md:hidden shadow-[0_-4px_20px_rgba(15,23,42,0.06)]"
     >
-      <div className="mx-auto grid grid-cols-4 px-2">
+      <div className="mx-auto grid grid-cols-5 px-1.5">
         {navLinks.map((link) => {
           const active = pathname.startsWith(link.href);
           const Icon = link.icon;

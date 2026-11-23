@@ -20,6 +20,14 @@ type Action =
   | { type: "hydrate"; state: StudyState }
   | { type: "reset" }
   | { type: "saveSubject"; id?: string; name: string; color: SubjectColor; emoji?: string }
+  | {
+      type: "importLibrarySubject";
+      name: string;
+      color: SubjectColor;
+      emoji?: string;
+      chapters: string[];
+      mergeIntoSubjectId?: string;
+    }
   | { type: "deleteSubject"; id: string }
   | { type: "addChapter"; subjectId: string; title: string }
   | { type: "updateChapter"; subjectId: string; chapterId: string; title: string }
@@ -59,6 +67,56 @@ function reducer(state: StudyState, action: Action): StudyState {
         subjects: [
           ...state.subjects,
           { id: uid(), name: action.name, color: action.color, emoji: action.emoji, chapters: [] },
+        ],
+      };
+    }
+    case "importLibrarySubject": {
+      const normalize = (t: string) => t.trim().toLowerCase().replace(/\s+/g, " ");
+      const seenIncoming = new Set<string>();
+      const cleanChapters: string[] = [];
+      for (const raw of action.chapters) {
+        const title = raw.trim();
+        const key = normalize(title);
+        if (!title || seenIncoming.has(key)) continue;
+        seenIncoming.add(key);
+        cleanChapters.push(title);
+      }
+
+      if (action.mergeIntoSubjectId) {
+        const target = state.subjects.find((s) => s.id === action.mergeIntoSubjectId);
+        if (target) {
+          const existingKeys = new Set(target.chapters.map((c) => normalize(c.title)));
+          const chaptersToAppend = cleanChapters
+            .filter((title) => !existingKeys.has(normalize(title)))
+            .map((title) => ({ id: uid(), title, done: false }));
+
+          if (chaptersToAppend.length === 0) return state;
+
+          return {
+            ...state,
+            subjects: state.subjects.map((s) =>
+              s.id === target.id
+                ? { ...s, chapters: [...s.chapters, ...chaptersToAppend] }
+                : s
+            ),
+          };
+        }
+      }
+
+      const trimmedName = action.name.trim();
+      if (!trimmedName) return state;
+
+      return {
+        ...state,
+        subjects: [
+          ...state.subjects,
+          {
+            id: uid(),
+            name: trimmedName,
+            color: action.color,
+            emoji: action.emoji,
+            chapters: cleanChapters.map((title) => ({ id: uid(), title, done: false })),
+          },
         ],
       };
     }

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type HeaderTone = "sky" | "mint" | "amber" | "plum";
+type HeaderTone = "sky" | "mint" | "amber" | "plum" | "coral";
 
 const toneStyles: Record<HeaderTone, { badge: string; dot: string }> = {
   sky: {
@@ -19,6 +19,10 @@ const toneStyles: Record<HeaderTone, { badge: string; dot: string }> = {
   plum: {
     badge: "border-plum/25 bg-plum-tint text-plum-deep",
     dot: "bg-plum",
+  },
+  coral: {
+    badge: "border-slate/25 bg-slate-tint text-slate-deep",
+    dot: "bg-slate",
   },
 };
 

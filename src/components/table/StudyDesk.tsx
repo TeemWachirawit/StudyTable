@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Pencil, Plus, X } from "lucide-react";
+import { Check, Library, Pencil, Plus, X } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
 import { daysUntil, subjectProgress } from "@/lib/study";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import type { Subject } from "@/types/study";
@@ -31,9 +31,14 @@ export function StudyDesk() {
       description="บันทึกว่าแต่ละวิชาอ่านไปถึงบทไหนแล้ว ติ๊กบทที่อ่านจบ ระบบคำนวณความคืบหน้าให้อัตโนมัติ"
       actions={
         hydrated ? (
-          <Button onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4" /> เพิ่มวิชา
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/library" className={buttonVariants({ variant: "outline" })}>
+              <Library className="h-4 w-4 text-slate" /> หยิบจาก Library
+            </Link>
+            <Button onClick={() => setEditing("new")}>
+              <Plus className="h-4 w-4" /> เพิ่มวิชา
+            </Button>
+          </div>
         ) : undefined
       }
     />
@@ -65,9 +70,14 @@ export function StudyDesk() {
           <div className="mx-auto max-w-md rounded-2xl border border-dashed border-line-strong bg-sheet px-6 py-16 text-center">
             <p className="font-display text-xl font-bold text-ink">โต๊ะยังว่างอยู่</p>
             <p className="mt-2 text-ink-soft">เริ่มจากเพิ่มวิชาที่ต้องอ่าน แล้วใส่รายการบทเรียนของแต่ละวิชา</p>
-            <Button className="mt-6" onClick={() => setEditing("new")}>
-              <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
-            </Button>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link href="/library" className={buttonVariants({ variant: "outline" })}>
+                <Library className="h-4 w-4 text-slate" /> หยิบจาก Library
+              </Link>
+              <Button onClick={() => setEditing("new")}>
+                <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-2">

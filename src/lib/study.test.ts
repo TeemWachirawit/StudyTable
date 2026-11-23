@@ -12,6 +12,11 @@ import {
   weekdayIndex,
 } from "./study";
 import { isValidAvatarImage, PRESET_AVATARS } from "./avatars";
+import {
+  LIBRARY_CATALOG,
+  filterLibraryItems,
+  getLibraryMatchStatus,
+} from "./library-catalog";
 import { hashPassword, verifyPassword } from "./password";
 import { checkRateLimit } from "./rate-limit";
 import type { Exam, StudyBlock, Subject } from "@/types/study";
@@ -258,6 +263,76 @@ describe("time and duration formatters", () => {
     expect(formatDuration(60)).toBe("1 ชม.");
     expect(formatDuration(45)).toBe("45 นาที");
     expect(formatDuration(150)).toBe("2 ชม. 30 นาที");
+  });
+});
+
+describe("library catalog", () => {
+  it("contains valid unique items within API payload limits", () => {
+    const ids = new Set<string>();
+    expect(LIBRARY_CATALOG.length).toBeGreaterThan(0);
+
+    for (const item of LIBRARY_CATALOG) {
+      expect(ids.has(item.id)).toBe(false);
+      ids.add(item.id);
+      expect(item.name.trim().length).toBeGreaterThan(0);
+      expect(item.name.length).toBeLessThanOrEqual(120);
+      expect(item.chapters.length).toBeGreaterThan(0);
+      expect(item.chapters.length).toBeLessThanOrEqual(300);
+      for (const ch of item.chapters) {
+        expect(ch.trim().length).toBeGreaterThan(0);
+        expect(ch.length).toBeLessThanOrEqual(200);
+      }
+    }
+  });
+
+  it("filters items by category, subject name, code, and chapter title", () => {
+    const tgatOnly = filterLibraryItems(LIBRARY_CATALOG, "tgat", "");
+    expect(tgatOnly.length).toBe(3);
+    expect(tgatOnly.every((i) => i.category === "tgat")).toBe(true);
+
+    const byChapter = filterLibraryItems(LIBRARY_CATALOG, "all", "แคลคูลัส");
+    expect(byChapter.some((i) => i.id === "alevel-math1")).toBe(true);
+
+    const byCode = filterLibraryItems(LIBRARY_CATALOG, "alevel", "math 2");
+    expect(byCode.map((i) => i.id)).toEqual(["alevel-math2"]);
+  });
+
+  it("detects unmatched, partially imported, and fully imported subjects", () => {
+    const tgat3 = LIBRARY_CATALOG.find((i) => i.id === "tgat3-workforce")!;
+
+    const unmatched = getLibraryMatchStatus(tgat3, []);
+    expect(unmatched.matchedSubject).toBeNull();
+    expect(unmatched.isFullyImported).toBe(false);
+    expect(unmatched.missingChapters).toEqual(tgat3.chapters);
+
+    const partialSubject: Subject = {
+      id: "sub-1",
+      name: tgat3.name,
+      color: "sage",
+      chapters: [
+        { id: "c1", title: tgat3.chapters[0], done: true },
+        { id: "c2", title: tgat3.chapters[1], done: false },
+      ],
+    };
+    const partial = getLibraryMatchStatus(tgat3, [partialSubject]);
+    expect(partial.matchedSubject?.id).toBe("sub-1");
+    expect(partial.existingChapterCount).toBe(2);
+    expect(partial.missingChapters).toEqual(tgat3.chapters.slice(2));
+    expect(partial.isFullyImported).toBe(false);
+
+    const fullSubject: Subject = {
+      id: "sub-2",
+      name: `  ${tgat3.name}  `,
+      color: "sage",
+      chapters: tgat3.chapters.map((title, idx) => ({
+        id: `c-${idx}`,
+        title,
+        done: idx === 0,
+      })),
+    };
+    const full = getLibraryMatchStatus(tgat3, [fullSubject]);
+    expect(full.isFullyImported).toBe(true);
+    expect(full.missingChapters).toEqual([]);
   });
 });
 
