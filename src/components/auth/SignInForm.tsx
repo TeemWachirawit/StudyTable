@@ -15,8 +15,8 @@ export function SignInForm() {
   const rawCallback = searchParams.get("callbackUrl") || "/";
   const callbackUrl =
     rawCallback.startsWith("/") &&
-    !rawCallback.startsWith("//") &&
-    !rawCallback.startsWith("/\\")
+      !rawCallback.startsWith("//") &&
+      !rawCallback.startsWith("/\\")
       ? rawCallback
       : "/";
 
@@ -93,7 +93,20 @@ export function SignInForm() {
           </div>
         </Field>
 
-        <Field label="รหัสผ่าน" htmlFor="signin-password">
+        <Field
+          label={
+            <span className="flex items-center justify-between gap-2">
+              <span>รหัสผ่าน</span>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-terracotta-deep hover:underline"
+              >
+                ลืมรหัสผ่าน?
+              </Link>
+            </span>
+          }
+          htmlFor="signin-password"
+        >
           <div className="relative">
             <Lock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-muted" />
             <input

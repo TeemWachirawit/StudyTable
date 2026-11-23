@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 const protectedPaths = ["/planner", "/table", "/library", "/exam", "/dashboard", "/settings"];
-const authPaths = ["/signin", "/signup"];
+const authPaths = ["/signin", "/signup", "/forgot-password", "/reset-password"];
 const MAX_COOKIE_IMAGE_LENGTH = 2048;
 
 function sanitizeCookieImage(image: unknown): string | null {

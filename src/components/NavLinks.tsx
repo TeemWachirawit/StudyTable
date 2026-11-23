@@ -99,7 +99,13 @@ export function NavLinks({ className }: { className?: string }) {
   );
 }
 
-const PUBLIC_ROUTES = new Set(["/", "/signin", "/signup"]);
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/signin",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+]);
 
 export function MobileBottomNav() {
   const pathname = usePathname();
