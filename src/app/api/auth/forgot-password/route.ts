@@ -15,9 +15,27 @@ function hashToken(rawToken: string): string {
 function resolveAppOrigin(request: Request): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
   if (configured && /^https?:\/\//i.test(configured)) {
-    return configured;
+    const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(configured);
+    if (!isLocal || process.env.NODE_ENV !== "production") {
+      return configured;
+    }
   }
+
+  const vercelProdUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProdUrl) {
+    return `https://${vercelProdUrl.replace(/^https?:\/\//i, "").replace(/\/+$/, "")}`;
+  }
+
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  if (forwardedHost) {
+    const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    return `${proto}://${forwardedHost}`;
+  }
+
   const url = new URL(request.url);
+  if (process.env.NODE_ENV === "production" && url.protocol === "http:") {
+    return `https://${url.host}`;
+  }
   return url.origin;
 }
 

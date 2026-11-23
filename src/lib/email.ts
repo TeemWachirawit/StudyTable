@@ -40,7 +40,11 @@ export async function sendPasswordResetEmail(
           <a href="${resetUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 10px;">
             ตั้งรหัสผ่านใหม่
           </a>
-          <p style="margin: 20px 0 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+          <p style="margin: 16px 0 0; font-size: 12px; color: #64748b; line-height: 1.5; word-break: break-all;">
+            หรือคัดลอกลิงก์นี้ไปวางในเบราว์เซอร์:<br />
+            <a href="${resetUrl}" style="color: #2563eb;">${resetUrl}</a>
+          </p>
+          <p style="margin: 16px 0 0; font-size: 12px; color: #64748b; line-height: 1.5;">
             หากคุณไม่ได้ส่งคำขอนี้ สามารถละเว้นอีเมลฉบับนี้ได้ รหัสผ่านเดิมของคุณจะยังคงปลอดภัย
           </p>
         </div>
