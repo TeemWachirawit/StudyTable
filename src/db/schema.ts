@@ -167,9 +167,27 @@ export const exams = pgTable(
   ]
 ).enableRLS();
 
+export const feedbackReports = pgTable(
+  "feedback_reports",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    pagePath: text("page_path").default("").notNull(),
+    contactEmail: text("contact_email").default("").notNull(),
+    userAgent: text("user_agent").default("").notNull(),
+    status: text("status").default("open").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("feedback_reports_created_at_idx").on(t.createdAt)]
+).enableRLS();
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type DbSubject = typeof subjects.$inferSelect;
 export type DbChapter = typeof chapters.$inferSelect;
 export type DbStudyBlock = typeof studyBlocks.$inferSelect;
 export type DbExam = typeof exams.$inferSelect;
+export type DbFeedbackReport = typeof feedbackReports.$inferSelect;

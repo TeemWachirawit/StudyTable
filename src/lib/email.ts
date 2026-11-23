@@ -60,3 +60,80 @@ export async function sendPasswordResetEmail(
 
   return { sent: true, provider: "resend" };
 }
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+export interface FeedbackNotificationPayload {
+  id: string;
+  type: "bug" | "feature" | "general";
+  title: string;
+  description: string;
+  pagePath?: string;
+  contactEmail?: string;
+  userId?: string | null;
+}
+
+const TYPE_LABELS: Record<FeedbackNotificationPayload["type"], string> = {
+  bug: "แจ้งบั๊ก",
+  feature: "เสนอฟีเจอร์",
+  general: "ความคิดเห็นทั่วไป",
+};
+
+export async function sendFeedbackNotificationEmail(
+  payload: FeedbackNotificationPayload
+): Promise<EmailSendResult> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const notifyTo = process.env.FEEDBACK_NOTIFY_EMAIL?.trim();
+  const from = process.env.EMAIL_FROM?.trim() || "StudyTable <onboarding@resend.dev>";
+
+  if (!apiKey || !notifyTo) {
+    return { sent: false, provider: "none" };
+  }
+
+  const typeLabel = TYPE_LABELS[payload.type];
+  const safeTitle = escapeHtml(payload.title);
+  const safeDescription = escapeHtml(payload.description).replaceAll("\n", "<br />");
+  const safePage = escapeHtml(payload.pagePath || "-");
+  const safeEmail = escapeHtml(payload.contactEmail || "-");
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [notifyTo],
+      subject: `[StudyTable ${typeLabel}] ${payload.title}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #0f172a;">
+          <p style="margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #2563eb; text-transform: uppercase;">${typeLabel} • #${payload.id.slice(0, 8)}</p>
+          <h2 style="margin: 0 0 16px; font-size: 20px;">${safeTitle}</h2>
+          <div style="padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; line-height: 1.6; color: #334155;">
+            ${safeDescription}
+          </div>
+          <p style="margin: 16px 0 0; font-size: 12px; color: #64748b; line-height: 1.6;">
+            หน้าที่เกี่ยวข้อง: <strong>${safePage}</strong><br />
+            อีเมลติดต่อกลับ: <strong>${safeEmail}</strong>
+          </p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    console.error("[sendFeedbackNotificationEmail] Resend error:", res.status, errText);
+    return { sent: false, provider: "resend" };
+  }
+
+  return { sent: true, provider: "resend" };
+}

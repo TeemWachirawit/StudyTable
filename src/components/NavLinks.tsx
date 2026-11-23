@@ -105,6 +105,7 @@ const PUBLIC_ROUTES = new Set([
   "/signup",
   "/forgot-password",
   "/reset-password",
+  "/feedback",
 ]);
 
 export function MobileBottomNav() {
