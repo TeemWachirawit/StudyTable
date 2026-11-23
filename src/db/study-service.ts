@@ -34,6 +34,7 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
       name: s.name,
       color: s.color,
       emoji: s.emoji || undefined,
+      studySeconds: s.studySeconds ?? 0,
       chapters: (chaptersBySubject.get(s.id) ?? []).map((c) => ({
         id: c.id,
         title: c.title,
@@ -89,6 +90,7 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
           name: s.name,
           color: s.color,
           emoji: s.emoji || null,
+          studySeconds: Math.max(0, Math.floor(s.studySeconds ?? 0)),
           position: idx,
         }))
       );

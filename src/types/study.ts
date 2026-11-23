@@ -12,6 +12,8 @@ export interface Subject {
   color: SubjectColor;
   emoji?: string;
   chapters: Chapter[];
+  /** Accumulated focus/study time in seconds */
+  studySeconds?: number;
 }
 
 export type BlockType = "study" | "class";

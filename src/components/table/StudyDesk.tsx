@@ -1,27 +1,48 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, Library, Pencil, Plus, X } from "lucide-react";
+import { Check, Library, Pencil, Plus, Timer, X } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
-import { daysUntil, subjectProgress } from "@/lib/study";
+import { daysUntil, formatStudySeconds, subjectProgress } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import type { Subject } from "@/types/study";
+import { FocusTimer } from "./FocusTimer";
 import { SubjectEditor } from "./SubjectEditor";
 
 export function StudyDesk() {
   const { state, dispatch, hydrated } = useStudyStore();
   const [editing, setEditing] = useState<Subject | "new" | null>(null);
+  const [focusSubjectId, setFocusSubjectId] = useState<string>("");
+  const timerSectionRef = useRef<HTMLDivElement>(null);
+
+  const effectiveFocusSubjectId = useMemo(() => {
+    if (focusSubjectId && state.subjects.some((s) => s.id === focusSubjectId)) {
+      return focusSubjectId;
+    }
+    return state.subjects[0]?.id ?? "";
+  }, [focusSubjectId, state.subjects]);
 
   const totals = useMemo(() => {
     const all = state.subjects.flatMap((s) => s.chapters);
     const done = all.filter((c) => c.done).length;
-    return { done, total: all.length, pct: all.length ? Math.round((done / all.length) * 100) : 0 };
+    const totalStudySeconds = state.subjects.reduce((sum, s) => sum + (s.studySeconds ?? 0), 0);
+    return {
+      done,
+      total: all.length,
+      pct: all.length ? Math.round((done / all.length) * 100) : 0,
+      totalStudySeconds,
+    };
   }, [state.subjects]);
+
+  const handleFocusSubject = (subjectId: string) => {
+    setFocusSubjectId(subjectId);
+    timerSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const header = (
     <PageHeader
@@ -59,11 +80,29 @@ export function StudyDesk() {
 
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
         {state.subjects.length > 0 && (
-          <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <dl className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="ความคืบหน้ารวม" value={`${totals.pct}%`} dotClass="bg-terracotta" />
             <Stat label="บทที่อ่านจบแล้ว" value={`${totals.done}/${totals.total}`} dotClass="bg-sage" />
+            <Stat
+              label="เวลาอ่านสะสมรวม"
+              value={formatStudySeconds(totals.totalStudySeconds)}
+              dotClass="bg-plum"
+            />
             <Stat label="วิชาบนโต๊ะเรียน" value={String(state.subjects.length)} dotClass="bg-mustard" />
           </dl>
+        )}
+
+        {state.subjects.length > 0 && (
+          <div ref={timerSectionRef} className="scroll-mt-20">
+            <FocusTimer
+              subjects={state.subjects}
+              selectedSubjectId={effectiveFocusSubjectId}
+              onSelectSubject={setFocusSubjectId}
+              onLogStudyTime={(subjectId, seconds) =>
+                dispatch({ type: "addStudyTime", subjectId, seconds })
+              }
+            />
+          </div>
         )}
 
         {state.subjects.length === 0 ? (
@@ -82,7 +121,13 @@ export function StudyDesk() {
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-2">
             {state.subjects.map((s) => (
-              <SubjectPanel key={s.id} subject={s} onEdit={() => setEditing(s)} />
+              <SubjectPanel
+                key={s.id}
+                subject={s}
+                isFocused={s.id === effectiveFocusSubjectId}
+                onFocus={() => handleFocusSubject(s.id)}
+                onEdit={() => setEditing(s)}
+              />
             ))}
           </div>
         )}
@@ -130,7 +175,17 @@ function Stat({
   );
 }
 
-function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => void }) {
+function SubjectPanel({
+  subject,
+  isFocused,
+  onFocus,
+  onEdit,
+}: {
+  subject: Subject;
+  isFocused: boolean;
+  onFocus: () => void;
+  onEdit: () => void;
+}) {
   const { state, dispatch } = useStudyStore();
   const [newChapter, setNewChapter] = useState("");
   const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
@@ -184,6 +239,10 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
               </h2>
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+              <span className="inline-flex items-center gap-1 rounded-md border border-plum/25 bg-plum-tint px-2 py-0.5 font-medium text-plum-deep">
+                <Timer className="h-3 w-3" />
+                อ่านไปแล้ว {formatStudySeconds(subject.studySeconds ?? 0)}
+              </span>
               <Link
                 href="/planner"
                 className="rounded-md bg-paper-deep px-2 py-0.5 font-medium text-ink-soft transition-colors hover:text-ink"
@@ -200,14 +259,30 @@ function SubjectPanel({ subject, onEdit }: { subject: Subject; onEdit: () => voi
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
-            aria-label={`แก้ไขวิชา ${subject.name}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={onFocus}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
+                isFocused
+                  ? "border-terracotta/40 bg-terracotta-tint text-terracotta-deep"
+                  : "border-line bg-paper text-ink-soft hover:bg-paper-deep hover:text-ink"
+              )}
+              aria-label={`จับเวลาโฟกัสวิชา ${subject.name}`}
+            >
+              <Timer className="h-3.5 w-3.5" />
+              โฟกัส
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+              aria-label={`แก้ไขวิชา ${subject.name}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="mt-4">

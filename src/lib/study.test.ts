@@ -5,7 +5,9 @@ import {
   examReadiness,
   findConflict,
   formatBlockTime,
+  formatClock,
   formatDuration,
+  formatStudySeconds,
   isClassBlock,
   isStudyBlock,
   subjectProgress,
@@ -263,6 +265,20 @@ describe("time and duration formatters", () => {
     expect(formatDuration(60)).toBe("1 ชม.");
     expect(formatDuration(45)).toBe("45 นาที");
     expect(formatDuration(150)).toBe("2 ชม. 30 นาที");
+  });
+
+  it("formats accumulated study seconds and focus clock", () => {
+    expect(formatStudySeconds(0)).toBe("0 นาที");
+    expect(formatStudySeconds(45)).toBe("45 วินาที");
+    expect(formatStudySeconds(60)).toBe("1 นาที");
+    expect(formatStudySeconds(1500)).toBe("25 นาที");
+    expect(formatStudySeconds(5400)).toBe("1 ชม. 30 นาที");
+    expect(formatStudySeconds(7200)).toBe("2 ชม.");
+
+    expect(formatClock(0)).toBe("00:00");
+    expect(formatClock(65)).toBe("01:05");
+    expect(formatClock(1500)).toBe("25:00");
+    expect(formatClock(3661)).toBe("01:01:01");
   });
 });
 

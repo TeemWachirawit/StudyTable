@@ -85,6 +85,7 @@ export const subjects = pgTable(
     name: text("name").notNull(),
     color: text("color").$type<SubjectColor>().notNull(),
     emoji: text("emoji"),
+    studySeconds: integer("study_seconds").default(0).notNull(),
     position: integer("position").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

@@ -29,6 +29,8 @@ type Action =
       mergeIntoSubjectId?: string;
     }
   | { type: "deleteSubject"; id: string }
+  | { type: "addStudyTime"; subjectId: string; seconds: number }
+  | { type: "resetStudyTime"; subjectId: string }
   | { type: "addChapter"; subjectId: string; title: string }
   | { type: "updateChapter"; subjectId: string; chapterId: string; title: string }
   | { type: "toggleChapter"; subjectId: string; chapterId: string }
@@ -125,6 +127,25 @@ function reducer(state: StudyState, action: Action): StudyState {
         subjects: state.subjects.filter((s) => s.id !== action.id),
         blocks: state.blocks.filter((b) => b.subjectId !== action.id),
         exams: state.exams.filter((e) => e.subjectId !== action.id),
+      };
+    case "addStudyTime": {
+      const add = Math.max(0, Math.floor(action.seconds));
+      if (add <= 0) return state;
+      return {
+        ...state,
+        subjects: state.subjects.map((s) =>
+          s.id === action.subjectId
+            ? { ...s, studySeconds: (s.studySeconds ?? 0) + add }
+            : s
+        ),
+      };
+    }
+    case "resetStudyTime":
+      return {
+        ...state,
+        subjects: state.subjects.map((s) =>
+          s.id === action.subjectId ? { ...s, studySeconds: 0 } : s
+        ),
       };
 
     case "addChapter":

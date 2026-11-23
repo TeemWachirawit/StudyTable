@@ -51,6 +51,31 @@ export function formatDuration(durationMinutes: number): string {
   return `${mins} นาที`;
 }
 
+export function formatStudySeconds(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  if (safe === 0) return "0 นาที";
+  if (safe < 60) return `${safe} วินาที`;
+  const totalMinutes = Math.floor(safe / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (hours > 0 && mins > 0) return `${hours} ชม. ${mins} นาที`;
+  if (hours > 0) return `${hours} ชม.`;
+  return `${mins} นาที`;
+}
+
+export function formatClock(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safe / 3600);
+  const mins = Math.floor((safe % 3600) / 60);
+  const secs = safe % 60;
+  const mm = String(mins).padStart(2, "0");
+  const ss = String(secs).padStart(2, "0");
+  if (hours > 0) {
+    return `${String(hours).padStart(2, "0")}:${mm}:${ss}`;
+  }
+  return `${mm}:${ss}`;
+}
+
 /** Monday-based weekday index (0 = Monday) for a Date. */
 export function weekdayIndex(d: Date): number {
   return (d.getDay() + 6) % 7;
