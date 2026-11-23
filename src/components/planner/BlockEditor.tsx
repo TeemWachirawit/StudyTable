@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { BookOpen, Check, GraduationCap, MapPin, Sparkles, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Check, GraduationCap, MapPin, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Field, inputClass } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
   formatBlockTime,
   formatDuration,
   formatHour,
-  uid,
 } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import type { StudyBlock, Subject } from "@/types/study";
@@ -24,7 +23,7 @@ interface Props {
   subjects: Subject[];
   blocks: StudyBlock[];
   onClose: () => void;
-  onSave: (block: StudyBlock, followUp?: StudyBlock) => void;
+  onSave: (block: StudyBlock) => void;
   onDelete: (id: string) => void;
 }
 
@@ -61,7 +60,6 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
       location: draft.location ?? "",
     };
   });
-  const [autoAddStudy, setAutoAddStudy] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const set = <K extends keyof StudyBlock>(key: K, value: StudyBlock[K]) =>
@@ -147,41 +145,6 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
         ? `ชนกับ ${conflictSubject?.name ?? "ช่วงอื่น"} (${formatBlockTime(conflict)}) ในวันเดียวกัน`
         : null;
 
-  // Compute recommended follow-up review slot after class
-  const followUpCandidate = useMemo(() => {
-    if (form.type !== "class" || !isNew) return null;
-    const end = form.startHour + form.duration;
-    let targetHour = Math.max(end, 17);
-    if (targetHour >= LAST_HOUR) targetHour = end;
-
-    const simulated = [...blocks.filter((b) => b.id !== form.id), form];
-
-    while (targetHour < LAST_HOUR) {
-      const candidate: StudyBlock = {
-        id: "candidate",
-        subjectId: form.subjectId,
-        day: form.day,
-        startHour: targetHour,
-        duration: 1,
-        topic: "",
-        type: "study",
-      };
-      if (!findConflict(simulated, candidate)) {
-        return {
-          id: uid(),
-          subjectId: form.subjectId,
-          day: form.day,
-          startHour: targetHour,
-          duration: 1,
-          topic: `ทบทวน: ${subject?.name ?? "บทเรียน"}`,
-          type: "study" as const,
-        };
-      }
-      targetHour++;
-    }
-    return null;
-  }, [form, isNew, blocks, subject]);
-
   const handleSave = () => {
     if (error) return;
     const cleanBlock: StudyBlock = {
@@ -189,7 +152,7 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
       topic: form.topic.trim(),
       location: (form.location ?? "").trim(),
     };
-    onSave(cleanBlock, autoAddStudy && followUpCandidate ? followUpCandidate : undefined);
+    onSave(cleanBlock);
   };
 
   const isClass = form.type === "class";
@@ -441,33 +404,6 @@ export function BlockEditor({ draft, isNew, subjects, blocks, onClose, onSave, o
             );
           })}
         </div>
-
-        {/* Auto Add Study Review after class */}
-        {isNew && isClass && followUpCandidate && (
-          <div className="rounded-xl border border-line bg-paper p-3 text-xs transition-colors">
-            <label className="flex cursor-pointer items-start gap-2.5">
-              <input
-                type="checkbox"
-                checked={autoAddStudy}
-                onChange={(e) => setAutoAddStudy(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-line text-terracotta focus:ring-terracotta"
-              />
-              <div className="space-y-0.5">
-                <span className="flex items-center gap-1 font-semibold text-ink">
-                  <Sparkles className="h-3.5 w-3.5 text-mustard" />
-                  เพิ่มช่วงอ่านหนังสือทบทวนต่อหลังเลิกเรียน
-                </span>
-                <p className="text-ink-soft leading-normal">
-                  จัดสรรเวลาทบทวนวิชานี้อัตโนมัติในวันเดียวกัน ช่วงเวลา{" "}
-                  <strong className="text-ink">
-                    {formatBlockTime(followUpCandidate)}
-                  </strong>{" "}
-                  (1 ชม.)
-                </p>
-              </div>
-            </label>
-          </div>
-        )}
 
         {error && (
           <p

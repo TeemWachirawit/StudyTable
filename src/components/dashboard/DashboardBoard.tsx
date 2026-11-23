@@ -927,12 +927,8 @@ export function DashboardBoard() {
           subjects={state.subjects}
           blocks={state.blocks}
           onClose={() => setEditingBlock(null)}
-          onSave={(block, followUp) => {
-            if (followUp) {
-              dispatch({ type: "saveBlocks", blocks: [block, followUp] });
-            } else {
-              dispatch({ type: "saveBlock", block });
-            }
+          onSave={(block) => {
+            dispatch({ type: "saveBlock", block });
             setEditingBlock(null);
           }}
           onDelete={(id) => {

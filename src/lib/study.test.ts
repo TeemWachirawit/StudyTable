@@ -8,14 +8,13 @@ import {
   formatDuration,
   isClassBlock,
   isStudyBlock,
-  suggestStudyBlocks,
   subjectProgress,
   weekdayIndex,
 } from "./study";
 import { isValidAvatarImage, PRESET_AVATARS } from "./avatars";
 import { hashPassword, verifyPassword } from "./password";
 import { checkRateLimit } from "./rate-limit";
-import type { Exam, StudyBlock, StudyState, Subject } from "@/types/study";
+import type { Exam, StudyBlock, Subject } from "@/types/study";
 
 describe("weekdayIndex", () => {
   it("maps Monday to 0 and Sunday to 6", () => {
@@ -207,60 +206,6 @@ describe("isClassBlock and isStudyBlock", () => {
 
     expect(isClassBlock(untypedBlock)).toBe(false);
     expect(isStudyBlock(untypedBlock)).toBe(true);
-  });
-});
-
-describe("suggestStudyBlocks", () => {
-  const math: Subject = {
-    id: "sub-math",
-    name: "คณิตศาสตร์",
-    color: "terracotta",
-    chapters: [
-      { id: "c1", title: "ลิมิต", done: true },
-      { id: "c2", title: "ปริพันธ์", done: false },
-    ],
-  };
-
-  it("suggests non-conflicting study slots after class slots", () => {
-    const classBlock: StudyBlock = {
-      id: "cb1",
-      subjectId: "sub-math",
-      day: 0, // Monday
-      startHour: 9,
-      duration: 3, // 09:00 - 12:00
-      topic: "บรรยาย",
-      type: "class",
-      location: "SC-302",
-    };
-
-    const state: StudyState = {
-      subjects: [math],
-      blocks: [classBlock],
-      exams: [],
-    };
-
-    const suggestions = suggestStudyBlocks(state, {
-      preferredWindow: "all",
-      hoursPerSubject: 2,
-    });
-
-    expect(suggestions.length).toBeGreaterThan(0);
-    // All suggested blocks must be of type study
-    for (const sug of suggestions) {
-      expect(sug.type).toBe("study");
-      expect(sug.subjectId).toBe("sub-math");
-      // Check that none of the suggestions conflict with the existing class
-      const candidate: StudyBlock = {
-        id: sug.id,
-        subjectId: sug.subjectId,
-        day: sug.day,
-        startHour: sug.startHour,
-        duration: sug.duration,
-        topic: sug.topic,
-        type: "study",
-      };
-      expect(findConflict([classBlock], candidate)).toBeUndefined();
-    }
   });
 });
 

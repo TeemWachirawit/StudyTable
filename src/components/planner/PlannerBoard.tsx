@@ -9,7 +9,6 @@ import {
   GraduationCap,
   MapPin,
   Plus,
-  Sparkles,
 } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
@@ -35,7 +34,6 @@ import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import type { StudyBlock } from "@/types/study";
 import { BlockEditor } from "./BlockEditor";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
-import { SmartStudyModal } from "./SmartStudyModal";
 
 const ROW_REM = 4.5;
 const HOURS = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
@@ -44,7 +42,6 @@ export function PlannerBoard() {
   const { state, dispatch, hydrated } = useStudyStore();
   const [draft, setDraft] = useState<StudyBlock | null>(null);
   const [addingSubject, setAddingSubject] = useState(false);
-  const [smartModalOpen, setSmartModalOpen] = useState(false);
   const [filterType, setFilterType] = useState<"all" | "class" | "study">("all");
   const scrollRef = useRef<HTMLDivElement>(null);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
@@ -223,7 +220,7 @@ export function PlannerBoard() {
           </div>
         </div>
 
-        {/* View Filter & Smart Allocator Trigger */}
+        {/* View Filter */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div
             role="group"
@@ -272,16 +269,6 @@ export function PlannerBoard() {
               ตารางอ่านหนังสือ ({studyBlocksList.length})
             </button>
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSmartModalOpen(true)}
-            className="h-8 gap-1.5 border-mustard/40 bg-mustard-tint/40 text-xs font-semibold text-mustard-deep hover:bg-mustard-tint"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-mustard" />
-            จัดสรรเวลาอ่านอัตโนมัติ
-          </Button>
         </div>
 
         {/* Mobile Day Switcher */}
@@ -640,27 +627,13 @@ export function PlannerBoard() {
           subjects={state.subjects}
           blocks={state.blocks}
           onClose={() => setDraft(null)}
-          onSave={(block, followUp) => {
-            if (followUp) {
-              dispatch({ type: "saveBlocks", blocks: [block, followUp] });
-            } else {
-              dispatch({ type: "saveBlock", block });
-            }
+          onSave={(block) => {
+            dispatch({ type: "saveBlock", block });
             setDraft(null);
           }}
           onDelete={(id) => {
             dispatch({ type: "deleteBlock", id });
             setDraft(null);
-          }}
-        />
-      )}
-
-      {smartModalOpen && (
-        <SmartStudyModal
-          state={state}
-          onClose={() => setSmartModalOpen(false)}
-          onApply={(blocks) => {
-            dispatch({ type: "saveBlocks", blocks });
           }}
         />
       )}
