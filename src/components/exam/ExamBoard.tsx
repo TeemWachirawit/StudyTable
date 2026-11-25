@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { BookPlus, Check, Clock, Pencil, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BookPlus, Check, Clock, GraduationCap, Pencil, Plus } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
 import { daysUntil, examReadiness, formatThaiDate, toISODate, uid } from "@/lib/study";
+import { DEFAULT_DEK_YEAR, MAX_DEK_YEAR, MIN_DEK_YEAR } from "@/lib/tcas-exams";
 import { cn } from "@/lib/utils";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import type { Exam, Subject } from "@/types/study";
 import { ExamEditor } from "./ExamEditor";
+import { TcasExamModal } from "./TcasExamModal";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
+
+const DEK_COHORT_STORAGE_KEY = "studytable:dek-cohort";
 
 function urgencyStyle(days: number) {
   if (days < 0) return "border-line bg-paper-deep text-ink-muted";
@@ -24,6 +27,41 @@ export function ExamBoard() {
   const { state, dispatch, hydrated } = useStudyStore();
   const [draft, setDraft] = useState<Exam | null>(null);
   const [addingSubject, setAddingSubject] = useState(false);
+  const [tcasOpen, setTcasOpen] = useState(false);
+  const [dekYear, setDekYear] = useState<number>(DEFAULT_DEK_YEAR);
+  const [tcasNotice, setTcasNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DEK_COHORT_STORAGE_KEY);
+      if (saved) {
+        const parsed = Number.parseInt(saved, 10);
+        if (!Number.isNaN(parsed) && parsed >= MIN_DEK_YEAR && parsed <= MAX_DEK_YEAR) {
+          setDekYear(parsed);
+        }
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!tcasNotice) return;
+    const timer = setTimeout(() => setTcasNotice(null), 5000);
+    return () => clearTimeout(timer);
+  }, [tcasNotice]);
+
+  const handleAddTcasExams = (newExams: Exam[], chosenDekYear: number) => {
+    dispatch({ type: "saveExams", exams: newExams });
+    setDekYear(chosenDekYear);
+    try {
+      localStorage.setItem(DEK_COHORT_STORAGE_KEY, String(chosenDekYear));
+    } catch {
+      /* ignore storage errors */
+    }
+    setTcasOpen(false);
+    setTcasNotice(`เพิ่มการสอบ TCAS (Dek${chosenDekYear}) จำนวน ${newExams.length} วิชาเรียบร้อยแล้ว`);
+  };
 
   const subjectById = useMemo(() => new Map(state.subjects.map((s) => [s.id, s])), [state.subjects]);
   const sorted = useMemo(() => [...state.exams].sort((a, b) => a.date.localeCompare(b.date)), [state.exams]);
@@ -71,6 +109,9 @@ export function ExamBoard() {
             <Button variant="outline" size="sm" onClick={() => setAddingSubject(true)}>
               <BookPlus className="h-4 w-4" /> เพิ่มวิชา
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setTcasOpen(true)}>
+              <GraduationCap className="h-4 w-4" /> เพิ่มสอบ TCAS
+            </Button>
             <Button size="sm" onClick={openNew}>
               <Plus className="h-4 w-4" /> เพิ่มการสอบ
             </Button>
@@ -94,14 +135,35 @@ export function ExamBoard() {
       {header}
 
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        {tcasNotice && (
+          <div
+            role="status"
+            className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-sage/35 bg-sage-tint px-4 py-3 text-sm font-medium text-sage-deep"
+          >
+            <span>🎓 {tcasNotice}</span>
+            <button
+              type="button"
+              onClick={() => setTcasNotice(null)}
+              className="text-xs font-semibold opacity-75 hover:opacity-100"
+            >
+              ปิด
+            </button>
+          </div>
+        )}
+
         {upcoming.length === 0 && past.length === 0 ? (
           <EmptyState
             title="ยังไม่มีการสอบที่บันทึกไว้"
-            body="เพิ่มวันสอบและหัวข้อที่ออกสอบ แล้วระบบจะนับถอยหลังให้"
+            body="เพิ่มวันสอบทั่วไป หรือเลือกตารางสอบ TGAT / TPAT / A-Level ตามรุ่น Dek ของคุณ"
             action={
-              <Button onClick={openNew}>
-                <Plus className="h-4 w-4" /> เพิ่มการสอบ
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
+                <Button variant="outline" onClick={() => setTcasOpen(true)}>
+                  <GraduationCap className="h-4 w-4" /> เพิ่มสอบ TCAS (Dek{dekYear})
+                </Button>
+                <Button onClick={openNew}>
+                  <Plus className="h-4 w-4" /> เพิ่มการสอบ
+                </Button>
+              </div>
             }
           />
         ) : (
@@ -213,6 +275,16 @@ export function ExamBoard() {
             dispatch({ type: "saveSubject", name, color, emoji });
             setAddingSubject(false);
           }}
+        />
+      )}
+
+      {tcasOpen && (
+        <TcasExamModal
+          initialDekYear={dekYear}
+          subjects={state.subjects}
+          existingExams={state.exams}
+          onClose={() => setTcasOpen(false)}
+          onAddExams={handleAddTcasExams}
         />
       )}
     </>

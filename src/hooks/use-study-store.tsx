@@ -38,6 +38,7 @@ type Action =
   | { type: "saveBlock"; block: StudyBlock }
   | { type: "deleteBlock"; id: string }
   | { type: "saveExam"; exam: Exam }
+  | { type: "saveExams"; exams: Exam[] }
   | { type: "deleteExam"; id: string };
 
 const empty: StudyState = { subjects: [], blocks: [], exams: [] };
@@ -222,6 +223,14 @@ function reducer(state: StudyState, action: Action): StudyState {
 
     case "saveExam":
       return { ...state, exams: upsert(state.exams, action.exam) };
+    case "saveExams": {
+      if (action.exams.length === 0) return state;
+      let nextExams = state.exams;
+      for (const exam of action.exams) {
+        nextExams = upsert(nextExams, exam);
+      }
+      return { ...state, exams: nextExams };
+    }
     case "deleteExam":
       return { ...state, exams: state.exams.filter((e) => e.id !== action.id) };
   }
