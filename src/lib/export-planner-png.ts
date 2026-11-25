@@ -77,15 +77,23 @@ function mixHex(hexA: string, hexB: string, weightA: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-export async function exportPlannerToPng({
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/data:(.*?);base64/)?.[1] ?? "image/png";
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+export function exportPlannerToPng({
   blocks,
   subjects,
   filterLabel,
-}: ExportPlannerOptions): Promise<void> {
-  if (typeof document !== "undefined" && "fonts" in document) {
-    await document.fonts.ready;
-  }
-
+}: ExportPlannerOptions): void {
   const isDark = document.documentElement.classList.contains("dark");
   const palette = isDark
     ? {
@@ -152,7 +160,9 @@ export async function exportPlannerToPng({
   canvas.width = width * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) {
+    throw new Error("เบราว์เซอร์ไม่รองรับการสร้างรูป Canvas");
+  }
 
   ctx.scale(scale, scale);
 
@@ -374,12 +384,20 @@ export async function exportPlannerToPng({
     gridY + gridHeight + footerHeight / 2 + 4
   );
 
-  // Trigger download
+  // Synchronous Blob download preserves browser user-gesture activation & avoids data-URI size limits
   const dataUrl = canvas.toDataURL("image/png");
+  const blob = dataUrlToBlob(dataUrl);
+  const objectUrl = URL.createObjectURL(blob);
+  const filename = `studytable-planner-${toISODate(new Date())}.png`;
+
   const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = `studytable-planner-${toISODate(new Date())}.png`;
+  a.href = objectUrl;
+  a.download = filename;
+  a.rel = "noopener";
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
 }

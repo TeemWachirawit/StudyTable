@@ -249,7 +249,7 @@ export function PlannerBoard() {
     });
   };
 
-  const handleExportPng = async () => {
+  const handleExportPng = () => {
     if (exporting) return;
     setExporting(true);
     try {
@@ -259,11 +259,14 @@ export function PlannerBoard() {
           : filterType === "study"
             ? "เฉพาะตารางอ่านหนังสือ"
             : "ตารางเรียนและตารางอ่านหนังสือทั้งหมด";
-      await exportPlannerToPng({
+      exportPlannerToPng({
         blocks: displayedBlocks,
         subjects: state.subjects,
         filterLabel,
       });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "ไม่สามารถสร้างไฟล์ PNG ได้";
+      setDragNotice(msg);
     } finally {
       setExporting(false);
     }
