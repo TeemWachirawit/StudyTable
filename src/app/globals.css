@@ -54,6 +54,52 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --color-paper: #0b1120;
+    --color-paper-deep: #151e32;
+    --color-sheet: #111827;
+    --color-line: #1f2937;
+    --color-line-strong: #334155;
+
+    --color-ink: #f1f5f9;
+    --color-ink-soft: #cbd5e1;
+    --color-ink-muted: #94a3b8;
+
+    --color-terracotta: #3b82f6;
+    --color-terracotta-deep: #93c5fd;
+    --color-terracotta-tint: #172554;
+    --color-cobalt: #3b82f6;
+    --color-cobalt-deep: #93c5fd;
+    --color-cobalt-tint: #172554;
+
+    --color-sage: #14b8a6;
+    --color-sage-deep: #5eead4;
+    --color-sage-tint: #042f2e;
+
+    --color-mustard: #f59e0b;
+    --color-mustard-deep: #fcd34d;
+    --color-mustard-tint: #451a03;
+
+    --color-slate: #f43f5e;
+    --color-slate-deep: #fda4af;
+    --color-slate-tint: #4c0519;
+    --color-rose: #f43f5e;
+    --color-rose-deep: #fda4af;
+    --color-rose-tint: #4c0519;
+    --color-danger: #f43f5e;
+    --color-danger-deep: #fda4af;
+    --color-danger-tint: #4c0519;
+
+    --color-plum: #8b5cf6;
+    --color-plum-deep: #c4b5fd;
+    --color-plum-tint: #2e1065;
+  }
+
   body {
     background-color: var(--color-paper);
     color: var(--color-ink);

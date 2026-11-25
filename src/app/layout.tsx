@@ -33,6 +33,18 @@ export const metadata: Metadata = {
     "จัดตารางอ่านหนังสือรายสัปดาห์ บันทึกความคืบหน้าแต่ละวิชาและบทเรียน และนับถอยหลังวันสอบพร้อมขอบเขตเนื้อหา ในที่เดียว",
 };
 
+const themeInitScript = `
+(function(){
+  try {
+    var stored = localStorage.getItem("studytable:theme");
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (stored === "dark" || (!stored && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    }
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,8 +53,12 @@ export default function RootLayout({
   return (
     <html
       lang="th"
+      suppressHydrationWarning
       className={`${ibmSansThai.variable} ${notoSerifThai.variable} ${ibmMono.variable} scroll-smooth`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="flex min-h-screen flex-col pb-16 md:pb-0 selection:bg-terracotta-tint selection:text-terracotta-deep">
         <Providers>
           <Navbar />

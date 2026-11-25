@@ -107,15 +107,15 @@ export function getSubjectColor(color: SubjectColor): ResolvedSubjectColor {
     solidClass: "",
     textClass: "",
     blockStyle: {
-      backgroundColor: `color-mix(in srgb, ${validHex} ${light ? "18%" : "12%"}, #ffffff)`,
-      borderColor: `color-mix(in srgb, ${validHex} ${light ? "50%" : "35%"}, transparent)`,
-      color: `color-mix(in srgb, ${validHex} ${textMixPct}, #0f172a)`,
+      backgroundColor: `color-mix(in srgb, ${validHex} ${light ? "20%" : "14%"}, var(--color-sheet))`,
+      borderColor: `color-mix(in srgb, ${validHex} ${light ? "50%" : "40%"}, transparent)`,
+      color: `color-mix(in srgb, ${validHex} ${textMixPct}, var(--color-ink))`,
     },
     solidStyle: {
       backgroundColor: validHex,
     },
     textStyle: {
-      color: `color-mix(in srgb, ${validHex} ${textMixPct}, #0f172a)`,
+      color: `color-mix(in srgb, ${validHex} ${textMixPct}, var(--color-ink))`,
     },
   };
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MobileBottomNav, NavLinks, NavbarStatusOrCta } from "./NavLinks";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Logo() {
   return (
@@ -29,7 +30,10 @@ export function Navbar() {
             <NavLinks />
           </div>
 
-          <NavbarStatusOrCta />
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <NavbarStatusOrCta />
+          </div>
         </div>
       </header>
       <MobileBottomNav />
