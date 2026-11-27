@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Hourglass,
   Pause,
   Play,
@@ -65,6 +67,8 @@ interface Props {
   selectedSubjectId: string;
   onSelectSubject: (id: string) => void;
   onLogStudyTime: (subjectId: string, seconds: number) => void;
+  /** Increment to programmatically expand the timer (e.g. clicking "โฟกัส" on a subject card). */
+  expandSignal?: number;
 }
 
 export function FocusTimer({
@@ -72,6 +76,7 @@ export function FocusTimer({
   selectedSubjectId,
   onSelectSubject,
   onLogStudyTime,
+  expandSignal = 0,
 }: Props) {
   const [mode, setMode] = useState<TimerMode>("countdown");
   const [targetMinutes, setTargetMinutes] = useState<number>(25);
@@ -82,6 +87,11 @@ export function FocusTimer({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [restored, setRestored] = useState<boolean>(false);
   const [banner, setBanner] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (expandSignal > 0) setExpanded(true);
+  }, [expandSignal]);
 
   const originalTitleRef = useRef<string>("");
   const completedRef = useRef<boolean>(false);
@@ -109,6 +119,7 @@ export function FocusTimer({
         }
         if (typeof parsed.startedAt === "number" || parsed.startedAt === null) {
           setStartedAt(parsed.startedAt ?? null);
+          if (parsed.startedAt !== null) setExpanded(true);
         }
         if (typeof parsed.soundEnabled === "boolean") {
           setSoundEnabled(parsed.soundEnabled);
@@ -277,6 +288,8 @@ export function FocusTimer({
     onSelectSubject(nextId);
   };
 
+  const isExpanded = expanded || isRunning || elapsedSec > 0;
+
   return (
     <section
       aria-label="จับเวลาโฟกัสอ่านหนังสือ"
@@ -284,261 +297,335 @@ export function FocusTimer({
     >
       <div className={cn("h-1.5 transition-colors", color.solidClass)} style={color.solidStyle} />
 
-      <div className="p-5 sm:p-6">
-        {/* Top bar: title + mode switcher + sound toggle */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+      {!isExpanded ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <span
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl border",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
                 color.blockClass
               )}
               style={color.blockStyle}
             >
               <Timer className="h-4.5 w-4.5" />
             </span>
-            <div>
-              <h2 className="font-display text-lg font-bold text-ink">Focus Timer</h2>
-              <p className="text-xs text-ink-soft">
-                เลือกวิชาแล้วจับเวลาอ่านหนังสือ ระบบสะสมเวลาให้แต่ละวิชาอัตโนมัติ
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-base font-bold text-ink">Focus Timer</h2>
+                <span className="truncate text-xs text-ink-soft">
+                  {activeSubject.emoji ? `${activeSubject.emoji} ` : ""}
+                  {activeSubject.name}
+                </span>
+              </div>
+              <p className="font-mono text-xs text-ink-muted">
+                {formatClock(displaySec)} · สะสมแล้ว {formatStudySeconds(activeSubject.studySeconds ?? 0)}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div
-              role="group"
-              aria-label="โหมดจับเวลา"
-              className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs"
+            <Button
+              size="sm"
+              onClick={() => {
+                setExpanded(true);
+                handleStart();
+              }}
+              className="gap-1.5"
             >
-              <button
-                type="button"
-                aria-pressed={mode === "countdown"}
-                onClick={() => handleModeSwitch("countdown")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-semibold transition-colors",
-                  mode === "countdown"
-                    ? "border border-line bg-sheet text-ink shadow-2xs"
-                    : "text-ink-soft hover:text-ink"
-                )}
-              >
-                <Hourglass className="h-3.5 w-3.5 text-terracotta" />
-                โฟกัส (นับถอยหลัง)
-              </button>
-              <button
-                type="button"
-                aria-pressed={mode === "stopwatch"}
-                onClick={() => handleModeSwitch("stopwatch")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-semibold transition-colors",
-                  mode === "stopwatch"
-                    ? "border border-line bg-sheet text-ink shadow-2xs"
-                    : "text-ink-soft hover:text-ink"
-                )}
-              >
-                <Timer className="h-3.5 w-3.5 text-sage" />
-                จับเวลาเดินหน้า
-              </button>
-            </div>
-
+              <Play className="h-3.5 w-3.5 fill-current" />
+              เริ่มโฟกัส
+            </Button>
             <button
               type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
-              aria-label={soundEnabled ? "ปิดเสียงแจ้งเตือน" : "เปิดเสียงแจ้งเตือน"}
-              title={soundEnabled ? "เปิดเสียงแจ้งเตือนเมื่อครบเวลา" : "ปิดเสียงแจ้งเตือน"}
-              className="rounded-lg border border-line bg-paper p-2 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+              onClick={() => setExpanded(true)}
+              aria-expanded={false}
+              aria-label="ขยายแถบ Focus Timer"
+              className="inline-flex items-center gap-1 rounded-lg border border-line bg-paper px-2.5 py-2 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
             >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-ink-muted" />}
+              ตั้งค่า
+              <ChevronDown className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
-
-        {/* Main body */}
-        <div className="mt-5 grid items-center gap-6 lg:grid-cols-[1.25fr_1fr]">
-          {/* Left: Subject selector + presets */}
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="focus-subject-select"
-                className="mb-1.5 block text-xs font-semibold text-ink-soft"
-              >
-                กำลังอ่านวิชา
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  id="focus-subject-select"
-                  value={activeSubject.id}
-                  onChange={(e) => handleSubjectChange(e.target.value)}
-                  className="h-10 min-w-[200px] flex-1 rounded-xl border border-line-strong bg-paper px-3 text-sm font-semibold text-ink transition-colors focus:border-terracotta focus:bg-sheet focus:outline-none"
-                >
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.emoji ? `${s.emoji} ` : ""}
-                      {s.name} ({formatStudySeconds(s.studySeconds ?? 0)})
-                    </option>
-                  ))}
-                </select>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 font-mono text-xs font-semibold",
-                    color.blockClass
-                  )}
-                  style={color.blockStyle}
-                >
-                  สะสมแล้ว {formatStudySeconds(activeSubject.studySeconds ?? 0)}
-                </span>
-              </div>
-            </div>
-
-            {mode === "countdown" ? (
-              <div>
-                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">
-                  ตั้งเวลาโฟกัส
-                </span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {PRESET_MINUTES.map((mins) => {
-                    const active = targetMinutes === mins;
-                    return (
-                      <button
-                        key={mins}
-                        type="button"
-                        disabled={isRunning}
-                        onClick={() => applyTargetMinutes(mins)}
-                        className={cn(
-                          "rounded-lg border px-3 py-1.5 font-mono text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-                          active
-                            ? "border-terracotta bg-terracotta-tint text-terracotta-deep"
-                            : "border-line bg-paper text-ink-soft hover:border-line-strong hover:text-ink"
-                        )}
-                      >
-                        {mins} นาที
-                      </button>
-                    );
-                  })}
-                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1 text-xs">
-                    <span className="text-ink-muted">กำหนดเอง</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={180}
-                      disabled={isRunning}
-                      value={customMinutesInput}
-                      onChange={(e) => setCustomMinutesInput(e.target.value)}
-                      onBlur={() => {
-                        const n = parseInt(customMinutesInput, 10);
-                        if (!isNaN(n)) applyTargetMinutes(n);
-                        else setCustomMinutesInput(String(targetMinutes));
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const n = parseInt(customMinutesInput, 10);
-                          if (!isNaN(n)) applyTargetMinutes(n);
-                        }
-                      }}
-                      aria-label="กำหนดเวลาโฟกัสเป็นนาที"
-                      className="w-12 rounded bg-sheet px-1.5 py-0.5 text-center font-mono text-xs font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-terracotta disabled:opacity-50"
-                    />
-                    <span className="text-ink-muted">นาที</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="rounded-xl border border-line bg-paper/70 px-3.5 py-2.5 text-xs leading-relaxed text-ink-soft">
-                โหมดจับเวลาเดินหน้าเหมาะสำหรับอ่านแบบไม่จำกัดเวลา กด{" "}
-                <strong className="text-ink">เริ่ม</strong> แล้วกด{" "}
-                <strong className="text-ink">บันทึกเวลา</strong> เมื่ออ่านจบเพื่อสะสมเข้าวิชานี้
-              </p>
-            )}
-
-            {banner && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="flex items-center gap-2 rounded-xl border border-sage/35 bg-sage-tint px-3.5 py-2 text-xs font-medium text-sage-deep"
-              >
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-sage" />
-                <span>{banner}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Clock readout & controls */}
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-paper/75 px-5 py-5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
+      ) : (
+        <div className="p-5 sm:p-6">
+          {/* Top bar: title + mode switcher + sound toggle */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
               <span
                 className={cn(
-                  "h-2 w-2 rounded-full",
-                  isRunning ? "animate-pulse bg-sage" : "bg-ink-muted/50"
+                  "flex h-9 w-9 items-center justify-center rounded-xl border",
+                  color.blockClass
                 )}
-                aria-hidden="true"
-              />
-              <span>
-                {isRunning
-                  ? `กำลังโฟกัส · ${activeSubject.name}`
-                  : elapsedSec > 0
-                    ? `พักอยู่ (อ่านไปแล้ว ${formatStudySeconds(elapsedSec)})`
-                    : `พร้อมเริ่มอ่าน · ${activeSubject.name}`}
+                style={color.blockStyle}
+              >
+                <Timer className="h-4.5 w-4.5" />
               </span>
+              <div>
+                <h2 className="font-display text-lg font-bold text-ink">Focus Timer</h2>
+                <p className="text-xs text-ink-soft">
+                  เลือกวิชาแล้วจับเวลาอ่านหนังสือ ระบบสะสมเวลาให้แต่ละวิชาอัตโนมัติ
+                </p>
+              </div>
             </div>
 
-            <div
-              className="mt-2 font-mono text-5xl font-bold tracking-tight text-ink tabular-nums sm:text-6xl"
-              aria-live="off"
-            >
-              {formatClock(displaySec)}
-            </div>
+            <div className="flex items-center gap-2">
+              <div
+                role="group"
+                aria-label="โหมดจับเวลา"
+                className="flex items-center gap-1 rounded-xl border border-line bg-paper p-1 text-xs"
+              >
+                <button
+                  type="button"
+                  aria-pressed={mode === "countdown"}
+                  onClick={() => handleModeSwitch("countdown")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-semibold transition-colors",
+                    mode === "countdown"
+                      ? "border border-line bg-sheet text-ink shadow-2xs"
+                      : "text-ink-soft hover:text-ink"
+                  )}
+                >
+                  <Hourglass className="h-3.5 w-3.5 text-terracotta" />
+                  โฟกัส (นับถอยหลัง)
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "stopwatch"}
+                  onClick={() => handleModeSwitch("stopwatch")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-semibold transition-colors",
+                    mode === "stopwatch"
+                      ? "border border-line bg-sheet text-ink shadow-2xs"
+                      : "text-ink-soft hover:text-ink"
+                  )}
+                >
+                  <Timer className="h-3.5 w-3.5 text-sage" />
+                  จับเวลาเดินหน้า
+                </button>
+              </div>
 
-            {mode === "countdown" && (
-              <div className="mt-3 w-full max-w-xs">
-                <div className="h-2 overflow-hidden rounded-full bg-paper-deep">
-                  <div
-                    className={cn("h-full rounded-full transition-[width] duration-300", color.solidClass)}
-                    style={{ ...color.solidStyle, width: `${progressPct}%` }}
-                  />
+              <button
+                type="button"
+                onClick={() => setSoundEnabled((v) => !v)}
+                aria-pressed={soundEnabled}
+                aria-label={soundEnabled ? "ปิดเสียงแจ้งเตือน" : "เปิดเสียงแจ้งเตือน"}
+                title={soundEnabled ? "เปิดเสียงแจ้งเตือนเมื่อครบเวลา" : "ปิดเสียงแจ้งเตือน"}
+                className="rounded-lg border border-line bg-paper p-2 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-ink-muted" />}
+              </button>
+
+              {!isRunning && elapsedSec === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  aria-expanded={true}
+                  aria-label="ย่อแถบ Focus Timer"
+                  title="ย่อแถบจับเวลา"
+                  className="rounded-lg border border-line bg-paper p-2 text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Main body */}
+          <div className="mt-5 grid items-center gap-6 lg:grid-cols-[1.25fr_1fr]">
+            {/* Left: Subject selector + presets */}
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="focus-subject-select"
+                  className="mb-1.5 block text-xs font-semibold text-ink-soft"
+                >
+                  กำลังอ่านวิชา
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    id="focus-subject-select"
+                    value={activeSubject.id}
+                    onChange={(e) => handleSubjectChange(e.target.value)}
+                    className="h-10 min-w-[200px] flex-1 rounded-xl border border-line-strong bg-paper px-3 text-sm font-semibold text-ink transition-colors focus:border-terracotta focus:bg-sheet focus:outline-none"
+                  >
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.emoji ? `${s.emoji} ` : ""}
+                        {s.name} ({formatStudySeconds(s.studySeconds ?? 0)})
+                      </option>
+                    ))}
+                  </select>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 font-mono text-xs font-semibold",
+                      color.blockClass
+                    )}
+                    style={color.blockStyle}
+                  >
+                    สะสมแล้ว {formatStudySeconds(activeSubject.studySeconds ?? 0)}
+                  </span>
                 </div>
               </div>
-            )}
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              {!isRunning ? (
-                <Button onClick={handleStart} className="min-w-28 gap-1.5">
-                  <Play className="h-4 w-4 fill-current" />
-                  {elapsedSec > 0 ? "อ่านต่อ" : "เริ่มโฟกัส"}
-                </Button>
+              {mode === "countdown" ? (
+                <div>
+                  <span className="mb-1.5 block text-xs font-semibold text-ink-soft">
+                    ตั้งเวลาโฟกัส
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {PRESET_MINUTES.map((mins) => {
+                      const active = targetMinutes === mins;
+                      return (
+                        <button
+                          key={mins}
+                          type="button"
+                          aria-pressed={active}
+                          disabled={isRunning}
+                          onClick={() => applyTargetMinutes(mins)}
+                          className={cn(
+                            "rounded-lg border px-3 py-1.5 font-mono text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                            active
+                              ? "border-terracotta bg-terracotta-tint text-terracotta-deep"
+                              : "border-line bg-paper text-ink-soft hover:border-line-strong hover:text-ink"
+                          )}
+                        >
+                          {mins} นาที
+                        </button>
+                      );
+                    })}
+                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2.5 py-1 text-xs">
+                      <span className="text-ink-muted">กำหนดเอง</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={180}
+                        disabled={isRunning}
+                        value={customMinutesInput}
+                        onChange={(e) => setCustomMinutesInput(e.target.value)}
+                        onBlur={() => {
+                          const n = parseInt(customMinutesInput, 10);
+                          if (!isNaN(n)) applyTargetMinutes(n);
+                          else setCustomMinutesInput(String(targetMinutes));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const n = parseInt(customMinutesInput, 10);
+                            if (!isNaN(n)) applyTargetMinutes(n);
+                          }
+                        }}
+                        aria-label="กำหนดเวลาโฟกัสเป็นนาที"
+                        className="w-12 rounded bg-sheet px-1.5 py-0.5 text-center font-mono text-xs font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-terracotta disabled:opacity-50"
+                      />
+                      <span className="text-ink-muted">นาที</span>
+                    </div>
+                  </div>
+                </div>
               ) : (
-                <Button variant="outline" onClick={handlePause} className="min-w-28 gap-1.5 bg-sheet">
-                  <Pause className="h-4 w-4" />
-                  พักชั่วคราว
-                </Button>
+                <p className="rounded-xl border border-line bg-paper/70 px-3.5 py-2.5 text-xs leading-relaxed text-ink-soft">
+                  โหมดจับเวลาเดินหน้าเหมาะสำหรับอ่านแบบไม่จำกัดเวลา กด{" "}
+                  <strong className="text-ink">เริ่ม</strong> แล้วกด{" "}
+                  <strong className="text-ink">บันทึกเวลา</strong> เมื่ออ่านจบเพื่อสะสมเข้าวิชานี้
+                </p>
               )}
 
-              {elapsedSec > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => commitAndReset(elapsedSec, false)}
-                  className="gap-1.5 border-sage/40 bg-sage-tint/60 text-sage-deep hover:bg-sage-tint"
+              {banner && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2 rounded-xl border border-sage/35 bg-sage-tint px-3.5 py-2 text-xs font-medium text-sage-deep"
                 >
-                  <Save className="h-4 w-4" />
-                  บันทึก (+{formatStudySeconds(elapsedSec)})
-                </Button>
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-sage" />
+                  <span>{banner}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Clock readout & controls (flattened divider instead of nested card) */}
+            <div className="flex flex-col items-center justify-center border-t border-line pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+              <div className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    isRunning ? "animate-pulse bg-sage" : "bg-ink-muted/50"
+                  )}
+                  aria-hidden="true"
+                />
+                <span>
+                  {isRunning
+                    ? `กำลังโฟกัส · ${activeSubject.name}`
+                    : elapsedSec > 0
+                      ? `พักอยู่ (อ่านไปแล้ว ${formatStudySeconds(elapsedSec)})`
+                      : `พร้อมเริ่มอ่าน · ${activeSubject.name}`}
+                </span>
+              </div>
+
+              <div
+                className="mt-2 font-mono text-5xl font-bold tracking-tight text-ink tabular-nums sm:text-6xl"
+                aria-live="off"
+              >
+                {formatClock(displaySec)}
+              </div>
+
+              {mode === "countdown" && (
+                <div className="mt-3 w-full max-w-xs">
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-paper-deep"
+                    role="progressbar"
+                    aria-valuenow={progressPct}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="ความคืบหน้าเวลาโฟกัส"
+                  >
+                    <div
+                      className={cn("h-full rounded-full transition-[width] duration-300", color.solidClass)}
+                      style={{ ...color.solidStyle, width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
               )}
 
-              {elapsedSec > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleReset}
-                  title="รีเซ็ตเวลาที่กำลังจับอยู่โดยไม่บันทึก"
-                  className="gap-1 text-ink-muted hover:text-ink"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  รีเซ็ต
-                </Button>
-              )}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {!isRunning ? (
+                  <Button onClick={handleStart} className="min-w-28 gap-1.5">
+                    <Play className="h-4 w-4 fill-current" />
+                    {elapsedSec > 0 ? "อ่านต่อ" : "เริ่มโฟกัส"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={handlePause} className="min-w-28 gap-1.5 bg-sheet">
+                    <Pause className="h-4 w-4" />
+                    พักชั่วคราว
+                  </Button>
+                )}
+
+                {elapsedSec > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => commitAndReset(elapsedSec, false)}
+                    className="gap-1.5 border-sage/40 bg-sage-tint/60 text-sage-deep hover:bg-sage-tint"
+                  >
+                    <Save className="h-4 w-4" />
+                    บันทึก (+{formatStudySeconds(elapsedSec)})
+                  </Button>
+                )}
+
+                {elapsedSec > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleReset}
+                    title="รีเซ็ตเวลาที่กำลังจับอยู่โดยไม่บันทึก"
+                    className="gap-1 text-ink-muted hover:text-ink"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    รีเซ็ต
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

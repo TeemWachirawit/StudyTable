@@ -20,7 +20,7 @@ export function Footer() {
             Table
           </Link>
           <Link href="/library" className="inline-flex items-center gap-1.5 hover:text-ink">
-            <span className="h-1.5 w-1.5 rounded-full bg-slate" />
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo" />
             Library
           </Link>
           <Link href="/exam" className="inline-flex items-center gap-1.5 hover:text-ink">

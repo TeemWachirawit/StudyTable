@@ -106,7 +106,7 @@ export function LibraryBoard() {
   const header = (
     <PageHeader
       eyebrow="Library"
-      tone="coral"
+      tone="indigo"
       title="คลังเนื้อหาสอบและบทเรียน"
       description="รวบรวมโครงสร้างข้อสอบ TGAT, TPAT, A-Level และบทเรียน ม.ปลาย เลือกหยิบวิชาหรือบทที่ต้องการแล้วจะขึ้นบนหน้า Table อัตโนมัติ"
       actions={
@@ -238,7 +238,7 @@ export function LibraryBoard() {
         {/* Summary bar */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-soft">
           <p className="flex items-center gap-1.5">
-            <BookMarked className="h-4 w-4 text-slate" />
+            <BookMarked className="h-4 w-4 text-indigo" />
             พบ <span className="font-mono font-semibold text-ink">{filteredItems.length}</span> ชุดเนื้อหา
             {query.trim() && (
               <span>
@@ -335,7 +335,6 @@ export function LibraryBoard() {
                     <div className="mt-3 flex items-start gap-2.5">
                       <span
                         className="mt-0.5 text-2xl leading-none select-none"
-                        role="img"
                         aria-hidden="true"
                       >
                         {item.emoji}
@@ -350,15 +349,15 @@ export function LibraryBoard() {
                       </div>
                     </div>
 
-                    {/* Chapter preview list */}
-                    <div className="mt-4 flex-1 rounded-lg border border-line bg-paper/70 px-3 py-2.5">
+                    {/* Chapter preview list (flattened divider instead of nested card) */}
+                    <div className="mt-4 flex-1 border-t border-line pt-3">
                       <p className="mb-1.5 text-[11px] font-semibold text-ink-muted">
                         ตัวอย่างบทเรียน ({item.chapters.length} บท)
                       </p>
                       <ul className="space-y-1 text-xs text-ink-soft">
                         {previewChapters.map((ch, idx) => (
                           <li key={idx} className="flex items-baseline gap-2">
-                            <span className="font-mono text-[10px] text-ink-muted">
+                            <span className="font-mono text-[11px] text-ink-muted">
                               {String(idx + 1).padStart(2, "0")}
                             </span>
                             <span className="truncate">{ch}</span>

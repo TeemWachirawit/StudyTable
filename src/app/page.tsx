@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, BookOpenCheck, Hourglass } from "lucide-react";
+import { ArrowRight, CalendarDays, BookOpenCheck, Hourglass, Library } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PlannerPreview } from "@/components/landing/PlannerPreview";
 import { TablePreview } from "@/components/landing/TablePreview";
@@ -19,16 +19,20 @@ const features = [
       link: "text-terracotta-deep hover:text-terracotta",
       cardHover: "hover:bg-terracotta-tint/40",
     },
-    title: "จัดตารางอ่านหนังสือแบบรายสัปดาห์",
-    body: "ตารางวัน × เวลาที่คุ้นตาเหมือนปฏิทินหรือตารางเรียน วางช่วงเวลา ใส่วิชาและหัวข้อที่จะอ่าน แยกสีโทนอ่อนตามวิชาให้เห็นภาพรวมทั้งสัปดาห์ในแวบเดียว",
-    points: ["มุมมองจันทร์–อาทิตย์ แบ่งช่วงรายชั่วโมง", "สลับดูรายวันได้สะดวกบนมือถือ", "เห็นจำนวนชั่วโมงที่วางแผนไว้ต่อสัปดาห์"],
+    title: "จัดตารางเรียนและอ่านหนังสือรายสัปดาห์",
+    body: "ตารางวัน × เวลาที่คุ้นตา ลากย้ายช่วงเวลาและยืดความยาวได้ทันที พร้อมส่งออกเป็นรูป PNG เก็บไว้ดูหรือแชร์ให้เพื่อน",
+    points: [
+      "ลากย้ายเวลา (Drag & Drop) และปรับความยาวได้ทั้งมือถือและคอม",
+      "แยกตารางเรียนกับตารางอ่าน พร้อมส่งออกเป็นไฟล์ PNG 2x",
+      "รวม Today's To-Do ดูว่าวันนี้ต้องอ่านอะไรบ้าง",
+    ],
     preview: <PlannerPreview variant="mixed" />,
   },
   {
     id: "table",
     href: "/table",
     icon: BookOpenCheck,
-    tag: "Table",
+    tag: "Table & Focus",
     tone: {
       badge: "border-sage/25 bg-sage-tint text-sage-deep",
       iconWrap: "bg-sage-tint text-sage-deep border-sage/25",
@@ -36,16 +40,20 @@ const features = [
       link: "text-sage-deep hover:text-sage",
       cardHover: "hover:bg-sage-tint/40",
     },
-    title: "โต๊ะเรียนที่จำได้ว่าคุณอ่านถึงไหนแล้ว",
-    body: "บันทึกความคืบหน้าทีละวิชา ทีละบท ติ๊กบทที่อ่านจบแล้ว ระบบคำนวณเปอร์เซ็นต์ให้อัตโนมัติ ไม่ต้องจำเองว่าเก็บเนื้อหาไปถึงไหน",
-    points: ["รายการวิชาและบทเรียนของคุณเอง", "แก้ไขชื่อบทเรียนและติ๊กความคืบหน้าได้ทันที", "รู้ทันทีว่าบทไหนยังค้างอยู่"],
+    title: "โต๊ะเรียน + Focus Timer จับเวลาอ่านจริง",
+    body: "บันทึกความคืบหน้าทีละวิชา ทีละบท พร้อมจับเวลาโฟกัส (Countdown / Stopwatch) สะสมชั่วโมงอ่านจริงของแต่ละวิชาอัตโนมัติ",
+    points: [
+      "ติ๊กบทเรียนที่อ่านจบและคำนวณเปอร์เซ็นต์อัตโนมัติ",
+      "Focus Timer สะสมเวลาอ่านจริงแยกตามรายวิชา",
+      "หยิบชุดบทเรียนสำเร็จรูป TGAT / TPAT / A-Level จากคลัง Library",
+    ],
     preview: <TablePreview />,
   },
   {
     id: "exam",
     href: "/exam",
     icon: Hourglass,
-    tag: "Exam",
+    tag: "Exam & TCAS",
     tone: {
       badge: "border-mustard/35 bg-mustard-tint text-mustard-deep",
       iconWrap: "bg-mustard-tint text-mustard-deep border-mustard/35",
@@ -53,10 +61,36 @@ const features = [
       link: "text-mustard-deep hover:text-mustard",
       cardHover: "hover:bg-mustard-tint/50",
     },
-    title: "นับถอยหลังวันสอบ พร้อมขอบเขตเนื้อหา",
-    body: "ใส่วันสอบของแต่ละวิชา แล้วดูว่าเหลืออีกกี่วัน พร้อมรายการหัวข้อที่ออกสอบ ติ๊กบทที่อ่านจบได้จากหน้าสอบโดยตรง",
-    points: ["นับวันที่เหลือก่อนสอบอัตโนมัติ", "คลิกติ๊กบทที่อ่านจบแล้วได้ทันทีในการ์ดสอบ", "เน้นสีเตือนวิชาที่ใกล้สอบ"],
+    title: "นับถอยหลังวันสอบ + ปฏิทิน TCAS ตามรุ่น Dek",
+    body: "ใส่วันสอบเองหรือเลือกชุดสอบ TGAT / TPAT / A-Level สำเร็จรูปตามรุ่น Dek ของคุณ พร้อมติ๊กบทที่ออกสอบได้ทันที",
+    points: [
+      "เพิ่มตารางสอบ TCAS สำเร็จรูปตามรุ่น Dek ได้ในคลิกเดียว",
+      "เชื่อมวิชาและติ๊กบทที่อ่านจบแล้วได้ทันทีในการ์ดสอบ",
+      "เน้นสีเตือนวิชาที่ใกล้สอบ รองรับทั้งโหมดสว่างและ Dark Mode",
+    ],
     preview: <ExamPreview />,
+  },
+];
+
+const pillars = [
+  ...features.map((f) => ({
+    id: f.id,
+    href: `#${f.id}`,
+    icon: f.icon,
+    tag: f.tag,
+    summary: f.points[0],
+    tone: f.tone,
+  })),
+  {
+    id: "library",
+    href: "/library",
+    icon: Library,
+    tag: "Library",
+    summary: "คลังบทเรียน TGAT, TPAT, A-Level และ ม.ปลาย หยิบเข้า Table ได้ทันที",
+    tone: {
+      iconWrap: "bg-indigo-tint text-indigo-deep border-indigo/25",
+      cardHover: "hover:bg-indigo-tint/40",
+    },
   },
 ];
 
@@ -120,15 +154,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── Three pillars summary (3 Soft Productivity Accents) ───────── */}
+      {/* ───────── Four pillars summary ───────── */}
       <section aria-label="สรุปฟีเจอร์" className="border-b border-line bg-sheet">
-        <div className="mx-auto grid max-w-6xl divide-y divide-line px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0">
-          {features.map((f) => (
-            <a
+        <div className="mx-auto grid max-w-6xl divide-y divide-line px-5 sm:px-8 md:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+          {pillars.map((f) => (
+            <Link
               key={f.id}
-              href={`#${f.id}`}
+              href={f.href}
               className={cn(
-                "group flex items-start gap-4 px-4 py-7 transition-colors md:px-6",
+                "group flex items-start gap-3.5 px-4 py-6 transition-colors lg:px-5",
                 f.tone.cardHover
               )}
             >
@@ -142,9 +176,9 @@ export default function LandingPage() {
               </span>
               <div>
                 <p className="font-semibold text-ink">{f.tag}</p>
-                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{f.points[0]}</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink-soft">{f.summary}</p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>

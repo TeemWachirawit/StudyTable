@@ -43,9 +43,9 @@ export const navLinks = [
     href: "/library",
     label: "Library",
     icon: Library,
-    dot: "bg-slate",
-    activeClass: "bg-slate-tint text-slate-deep border-slate/30",
-    activeMobile: "text-slate-deep bg-slate-tint/70",
+    dot: "bg-indigo",
+    activeClass: "bg-indigo-tint text-indigo-deep border-indigo/30",
+    activeMobile: "text-indigo-deep bg-indigo-tint/70",
   },
   {
     href: "/exam",
@@ -117,7 +117,7 @@ export function MobileBottomNav() {
       aria-label="เมนูหลักสำหรับมือถือ"
       className="fixed bottom-0 inset-x-0 z-40 border-t border-line bg-sheet/95 backdrop-blur-md pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 md:hidden shadow-[0_-4px_20px_rgba(15,23,42,0.06)]"
     >
-      <div className="mx-auto grid grid-cols-5 px-1.5">
+      <div className="mx-auto grid grid-cols-5 gap-0.5 px-1">
         {navLinks.map((link) => {
           const active = pathname.startsWith(link.href);
           const Icon = link.icon;
@@ -127,7 +127,7 @@ export function MobileBottomNav() {
               href={link.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-xl py-2 transition-all min-h-[3.25rem]",
+                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 transition-all min-h-[3.25rem]",
                 active
                   ? link.activeMobile
                   : "text-ink-muted hover:bg-paper-deep hover:text-ink"
@@ -147,7 +147,7 @@ export function MobileBottomNav() {
                   />
                 )}
               </div>
-              <span className={cn("text-[11px] font-medium leading-none", active ? "font-bold" : "")}>
+              <span className={cn("max-w-full truncate text-[11px] tracking-tight font-medium leading-none", active ? "font-bold" : "")}>
                 {link.label}
               </span>
             </Link>

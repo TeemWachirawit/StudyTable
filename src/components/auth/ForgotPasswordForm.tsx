@@ -68,9 +68,9 @@ export function ForgotPasswordForm() {
       {error && (
         <div
           role="alert"
-          className="mb-5 flex items-start gap-2.5 rounded-xl border border-slate/30 bg-slate-tint px-3.5 py-3 text-sm text-slate-deep"
+          className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-tint px-3.5 py-3 text-sm text-danger-deep"
         >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <span>{error}</span>
         </div>
       )}

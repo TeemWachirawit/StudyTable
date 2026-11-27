@@ -152,6 +152,7 @@ export function TcasExamModal({
                 <button
                   key={y}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => handleSelectPopularDek(y)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
@@ -164,7 +165,7 @@ export function TcasExamModal({
                   {y === 70 && (
                     <span
                       className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                        "rounded-full px-1.5 py-0.5 text-[11px] leading-none font-medium",
                         active ? "bg-sheet/20 text-sheet" : "bg-sage-tint text-sage-deep"
                       )}
                     >
@@ -177,6 +178,7 @@ export function TcasExamModal({
 
             <button
               type="button"
+              aria-pressed={customMode}
               onClick={() => setCustomMode(true)}
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
@@ -282,9 +284,11 @@ export function TcasExamModal({
         <div>
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-ink">2. เลือกวิชาที่ต้องการสอบ</p>
-            <div className="flex items-center gap-1 rounded-lg bg-paper-deep p-0.5">
+            <div role="tablist" aria-label="หมวดวิชาสอบ TCAS" className="flex items-center gap-1 rounded-lg bg-paper-deep p-0.5">
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeGroup === "all"}
                 onClick={() => setActiveGroup("all")}
                 className={cn(
                   "rounded-md px-2 py-1 text-xs font-medium transition-colors",
@@ -297,6 +301,8 @@ export function TcasExamModal({
                 <button
                   key={g.id}
                   type="button"
+                  role="tab"
+                  aria-selected={activeGroup === g.id}
                   onClick={() => setActiveGroup(g.id)}
                   className={cn(
                     "rounded-md px-2 py-1 text-xs font-medium transition-colors",
@@ -349,7 +355,7 @@ export function TcasExamModal({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={cn(
-                            "rounded-md border px-1.5 py-0.5 text-[10px] font-semibold",
+                            "rounded-md border px-1.5 py-0.5 text-[11px] leading-none font-semibold",
                             GROUP_BADGE[item.group]
                           )}
                         >

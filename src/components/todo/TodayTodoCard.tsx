@@ -31,6 +31,7 @@ export function TodayTodoCard({ compact = false }: Props) {
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
   const todayISO = useMemo(() => toISODate(today), [today]);
@@ -124,7 +125,14 @@ export function TodayTodoCard({ compact = false }: Props) {
                 <p className="font-mono text-xs font-semibold text-ink">
                   {done}/{total} เสร็จแล้ว
                 </p>
-                <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-paper-deep">
+                <div
+                  className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-paper-deep"
+                  role="progressbar"
+                  aria-valuenow={pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="ความคืบหน้ารายการวันนี้"
+                >
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-300",
@@ -153,7 +161,7 @@ export function TodayTodoCard({ compact = false }: Props) {
               onClick={() => setCollapsed((c) => !c)}
               aria-expanded={!collapsed}
               aria-label={collapsed ? "ขยายรายการวันนี้" : "ย่อรายการวันนี้"}
-              className="rounded-lg border border-line bg-paper p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink"
+              className="rounded-lg border border-line bg-paper p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
             >
               {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </button>
@@ -266,7 +274,7 @@ export function TodayTodoCard({ compact = false }: Props) {
                         </span>
                         <span className="max-w-52 truncate">{ch.title}</span>
                         {ch.done && (
-                          <span className="rounded bg-sage-tint px-1 py-0.2 text-[10px] font-medium text-sage-deep">
+                          <span className="rounded bg-sage-tint px-1.5 py-0.5 text-[11px] leading-none font-medium text-sage-deep">
                             อ่านแล้ว
                           </span>
                         )}
@@ -290,7 +298,7 @@ export function TodayTodoCard({ compact = false }: Props) {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+            <ul className="-mx-5 -mb-5 divide-y divide-line border-t border-line sm:-mx-6 sm:-mb-6">
               {items.map((item) => {
                 const subj = item.subjectId ? subjectById.get(item.subjectId) : undefined;
                 const color = subj ? getSubjectColor(subj.color) : null;
@@ -303,8 +311,8 @@ export function TodayTodoCard({ compact = false }: Props) {
                 const tableHref = subj
                   ? linkedChapters.length > 0
                     ? `/table?subject=${encodeURIComponent(subj.id)}&chapters=${encodeURIComponent(
-                        linkedChapters.map((c) => c.id).join(",")
-                      )}`
+                      linkedChapters.map((c) => c.id).join(",")
+                    )}`
                     : `/table?subject=${encodeURIComponent(subj.id)}`
                   : null;
 
@@ -312,7 +320,7 @@ export function TodayTodoCard({ compact = false }: Props) {
                   <li
                     key={item.key}
                     className={cn(
-                      "group flex flex-wrap items-start justify-between gap-2.5 px-3.5 py-2.5 transition-colors sm:flex-nowrap",
+                      "group flex flex-wrap items-start justify-between gap-2.5 px-5 py-3 transition-colors last:rounded-b-2xl sm:flex-nowrap sm:px-6",
                       item.done ? "bg-paper/60" : "bg-sheet hover:bg-paper/70"
                     )}
                   >
@@ -459,14 +467,36 @@ export function TodayTodoCard({ compact = false }: Props) {
                         </Link>
                       )}
                       {item.source === "custom" && (
-                        <button
-                          type="button"
-                          onClick={() => dispatch({ type: "deleteTodo", id: item.id })}
-                          className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger-deep"
-                          aria-label={`ลบ ${item.title}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        confirmDeleteId === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                dispatch({ type: "deleteTodo", id: item.id });
+                                setConfirmDeleteId(null);
+                              }}
+                              className="rounded-md bg-danger px-2 py-1 text-xs font-semibold text-white hover:bg-danger-deep"
+                            >
+                              ลบ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="rounded-md px-1.5 py-1 text-xs font-medium text-ink-muted hover:text-ink"
+                            >
+                              ยกเลิก
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-danger-tint hover:text-danger-deep"
+                            aria-label={`ลบ ${item.title}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )
                       )}
                     </div>
                   </li>

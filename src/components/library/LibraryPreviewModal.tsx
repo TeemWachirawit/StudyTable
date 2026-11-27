@@ -28,7 +28,7 @@ interface Props {
 export function LibraryPreviewModal({ item, match, onClose, onConfirm }: Props) {
   const hasMatch = Boolean(match.matchedSubject);
   const [mode, setMode] = useState<"merge" | "new">(
-    hasMatch && !match.isFullyImported ? "merge" : hasMatch ? "new" : "new"
+    hasMatch && !match.isFullyImported ? "merge" : "new"
   );
   const [customName, setCustomName] = useState(
     hasMatch && match.isFullyImported ? `${item.name} (ใหม่)` : item.name
@@ -276,7 +276,7 @@ export function LibraryPreviewModal({ item, match, onClose, onConfirm }: Props) 
                   </span>
                   <span className="flex-1 leading-snug">{chapter}</span>
                   {alreadyOnTable && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-tint px-2 py-0.5 text-[10px] font-semibold text-sage-deep">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-tint px-2 py-0.5 text-[11px] font-semibold text-sage-deep">
                       <Check className="h-3 w-3" strokeWidth={3} />
                       มีแล้ว
                     </span>

@@ -13,6 +13,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { inputClass, textareaClass } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 type FeedbackType = "bug" | "feature" | "general";
@@ -26,36 +27,36 @@ const FEEDBACK_TYPES: {
   iconClass: string;
   placeholder: string;
 }[] = [
-  {
-    value: "bug",
-    label: "แจ้งบั๊ก / ปัญหา",
-    hint: "ปุ่มกดไม่ได้ แสดงผลเพี้ยน หรือ error",
-    icon: Bug,
-    activeClass: "border-terracotta/50 bg-terracotta-tint text-terracotta-deep",
-    iconClass: "text-terracotta",
-    placeholder:
-      "อธิบายสิ่งที่เกิดขึ้น ขั้นตอนที่ทำให้เกิดปัญหา และสิ่งที่คาดหวังว่าจะเกิดขึ้น...",
-  },
-  {
-    value: "feature",
-    label: "เสนอฟีเจอร์ใหม่",
-    hint: "อยากให้เพิ่มเครื่องมือหรือความสามารถอะไร",
-    icon: Lightbulb,
-    activeClass: "border-mustard/50 bg-mustard-tint text-mustard-deep",
-    iconClass: "text-mustard-deep",
-    placeholder:
-      "อยากให้ StudyTable เพิ่มฟีเจอร์อะไร และจะช่วยให้การอ่านหนังสือของคุณดีขึ้นอย่างไร...",
-  },
-  {
-    value: "general",
-    label: "ความคิดเห็นทั่วไป",
-    hint: "คำติชม ประสบการณ์ใช้งาน หรือคำแนะนำอื่นๆ",
-    icon: MessageSquare,
-    activeClass: "border-sage/50 bg-sage-tint text-sage-deep",
-    iconClass: "text-sage-deep",
-    placeholder: "แชร์ความรู้สึกหรือข้อเสนอแนะที่คุณอยากบอกเรา...",
-  },
-];
+    {
+      value: "bug",
+      label: "แจ้งบั๊ก / ปัญหา",
+      hint: "ปุ่มกดไม่ได้ แสดงผลเพี้ยน หรือ error",
+      icon: Bug,
+      activeClass: "border-terracotta/50 bg-terracotta-tint text-terracotta-deep",
+      iconClass: "text-terracotta",
+      placeholder:
+        "อธิบายสิ่งที่เกิดขึ้น ขั้นตอนที่ทำให้เกิดปัญหา และสิ่งที่คาดหวังว่าจะเกิดขึ้น...",
+    },
+    {
+      value: "feature",
+      label: "เสนอฟีเจอร์ใหม่",
+      hint: "อยากให้เพิ่มเครื่องมือหรือความสามารถอะไร",
+      icon: Lightbulb,
+      activeClass: "border-mustard/50 bg-mustard-tint text-mustard-deep",
+      iconClass: "text-mustard-deep",
+      placeholder:
+        "อยากให้ StudyTable เพิ่มฟีเจอร์อะไร และจะช่วยให้การอ่านหนังสือของคุณดีขึ้นอย่างไร...",
+    },
+    {
+      value: "general",
+      label: "ความคิดเห็นทั่วไป",
+      hint: "คำติชม ประสบการณ์ใช้งาน หรือคำแนะนำอื่นๆ",
+      icon: MessageSquare,
+      activeClass: "border-sage/50 bg-sage-tint text-sage-deep",
+      iconClass: "text-sage-deep",
+      placeholder: "แชร์ความรู้สึกหรือข้อเสนอแนะที่คุณอยากบอกเรา...",
+    },
+  ];
 
 const PAGE_OPTIONS = [
   { value: "", label: "ไม่ระบุหน้า" },
@@ -171,8 +172,8 @@ export function FeedbackForm() {
       onSubmit={handleSubmit}
       className="space-y-6 rounded-2xl border border-line bg-sheet p-6 shadow-sm sm:p-8"
     >
-      <div>
-        <label className="block text-sm font-semibold text-ink">ประเภทของรายงาน</label>
+      <fieldset>
+        <legend className="block text-sm font-semibold text-ink">ประเภทของรายงาน</legend>
         <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
           {FEEDBACK_TYPES.map((item) => {
             const Icon = item.icon;
@@ -197,7 +198,7 @@ export function FeedbackForm() {
             );
           })}
         </div>
-      </div>
+      </fieldset>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -208,7 +209,7 @@ export function FeedbackForm() {
             id="feedback-page"
             value={pagePath}
             onChange={(e) => setPagePath(e.target.value)}
-            className="mt-1.5 h-11 w-full rounded-lg border border-line-strong bg-paper px-3 text-sm text-ink transition-colors focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/25"
+            className={cn(inputClass, "mt-1.5 h-11")}
           >
             {PAGE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -232,7 +233,7 @@ export function FeedbackForm() {
             }}
             placeholder="you@example.com"
             maxLength={254}
-            className="mt-1.5 h-11 w-full rounded-lg border border-line-strong bg-paper px-3.5 text-sm text-ink placeholder:text-ink-muted focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/25"
+            className={cn(inputClass, "mt-1.5 h-11 px-3.5")}
           />
         </div>
       </div>
@@ -253,10 +254,10 @@ export function FeedbackForm() {
             type === "bug"
               ? "เช่น กดบันทึกเวลาอ่านใน Focus Timer แล้วไม่ขึ้น"
               : type === "feature"
-                ? "เช่น อยากให้ส่งออกตารางเป็นรูปภาพหรือ PDF ได้"
+                ? "เช่น อยากให้ส่งออกตารางเป็นไฟล์ปฏิทิน .ics ได้"
                 : "เช่น ชอบโทนสีและหน้าตาเว็บมากครับ"
           }
-          className="mt-1.5 h-11 w-full rounded-lg border border-line-strong bg-paper px-3.5 text-sm text-ink placeholder:text-ink-muted focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/25"
+          className={cn(inputClass, "mt-1.5 h-11 px-3.5")}
         />
       </div>
 
@@ -278,7 +279,7 @@ export function FeedbackForm() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={activeType.placeholder}
-          className="mt-1.5 w-full resize-y rounded-lg border border-line-strong bg-paper px-3.5 py-2.5 text-sm leading-relaxed text-ink placeholder:text-ink-muted focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/25"
+          className={cn(textareaClass, "mt-1.5 resize-y px-3.5 py-2.5")}
         />
       </div>
 

@@ -21,6 +21,7 @@ export function StudyDesk() {
   const searchParams = useSearchParams();
   const [editing, setEditing] = useState<Subject | "new" | null>(null);
   const [focusSubjectId, setFocusSubjectId] = useState<string>("");
+  const [timerExpandSignal, setTimerExpandSignal] = useState(0);
   const timerSectionRef = useRef<HTMLDivElement>(null);
 
   const paramSubjectId = searchParams.get("subject");
@@ -79,6 +80,7 @@ export function StudyDesk() {
 
   const handleFocusSubject = (subjectId: string) => {
     setFocusSubjectId(subjectId);
+    setTimerExpandSignal((n) => n + 1);
     timerSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -92,7 +94,7 @@ export function StudyDesk() {
         hydrated ? (
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/library" className={buttonVariants({ variant: "outline" })}>
-              <Library className="h-4 w-4 text-slate" /> หยิบจาก Library
+              <Library className="h-4 w-4 text-indigo" /> หยิบจาก Library
             </Link>
             <Button onClick={() => setEditing("new")}>
               <Plus className="h-4 w-4" /> เพิ่มวิชา
@@ -136,6 +138,7 @@ export function StudyDesk() {
               subjects={state.subjects}
               selectedSubjectId={effectiveFocusSubjectId}
               onSelectSubject={setFocusSubjectId}
+              expandSignal={timerExpandSignal}
               onLogStudyTime={(subjectId, seconds) =>
                 dispatch({ type: "addStudyTime", subjectId, seconds })
               }
@@ -149,7 +152,7 @@ export function StudyDesk() {
             <p className="mt-2 text-ink-soft">เริ่มจากเพิ่มวิชาที่ต้องอ่าน แล้วใส่รายการบทเรียนของแต่ละวิชา</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link href="/library" className={buttonVariants({ variant: "outline" })}>
-                <Library className="h-4 w-4 text-slate" /> หยิบจาก Library
+                <Library className="h-4 w-4 text-indigo" /> หยิบจาก Library
               </Link>
               <Button onClick={() => setEditing("new")}>
                 <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
@@ -305,24 +308,28 @@ function SubjectPanel({
                 {subject.name}
               </h2>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-              <span className="inline-flex items-center gap-1 rounded-md border border-plum/25 bg-plum-tint px-2 py-0.5 font-medium text-plum-deep">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-muted">
+              <span className="inline-flex items-center gap-1 font-medium text-plum-deep">
                 <Timer className="h-3 w-3" />
-                อ่านไปแล้ว {formatStudySeconds(subject.studySeconds ?? 0)}
+                อ่านแล้ว {formatStudySeconds(subject.studySeconds ?? 0)}
               </span>
+              <span aria-hidden="true" className="text-line-strong">·</span>
               <Link
                 href="/planner"
-                className="rounded-md bg-paper-deep px-2 py-0.5 font-medium text-ink-soft transition-colors hover:text-ink"
+                className="font-medium text-ink-soft transition-colors hover:text-ink hover:underline"
               >
-                วางแผนไว้ {plannedHours} ชม./สัปดาห์
+                วางแผน {plannedHours} ชม./สัปดาห์
               </Link>
               {nextExam && (
-                <Link
-                  href="/exam"
-                  className="rounded-md border border-mustard/30 bg-mustard-tint px-2 py-0.5 font-medium text-mustard-deep hover:underline"
-                >
-                  {nextExam.title} · อีก {daysUntil(nextExam.date)} วัน
-                </Link>
+                <>
+                  <span aria-hidden="true" className="text-line-strong">·</span>
+                  <Link
+                    href="/exam"
+                    className="font-semibold text-mustard-deep hover:underline"
+                  >
+                    {nextExam.title} อีก {daysUntil(nextExam.date)} วัน
+                  </Link>
+                </>
               )}
             </div>
           </div>
@@ -406,82 +413,82 @@ function SubjectPanel({
         {subject.chapters.map((c, i) => {
           const isTargetToday = targetChapterIds?.has(c.id) ?? false;
           return (
-          <li
-            key={c.id}
-            className={cn(
-              "group flex items-center gap-2 border-b border-line/70 px-5 py-2.5 transition-colors last:border-b-0 hover:bg-paper",
-              isTargetToday && "bg-terracotta-tint/35 hover:bg-terracotta-tint/45"
-            )}
-          >
-            {editingChapterId === c.id ? (
-              <form
-                className="flex flex-1 items-center gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  commitChapterEdit(c.id);
-                }}
-              >
-                <input
-                  className={cn(inputClass, "h-8 text-sm")}
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                  onBlur={() => commitChapterEdit(c.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setEditingChapterId(null);
+            <li
+              key={c.id}
+              className={cn(
+                "group flex items-center gap-2 border-b border-line/70 px-5 py-2.5 transition-colors last:border-b-0 hover:bg-paper",
+                isTargetToday && "bg-terracotta-tint/35 hover:bg-terracotta-tint/45"
+              )}
+            >
+              {editingChapterId === c.id ? (
+                <form
+                  className="flex flex-1 items-center gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    commitChapterEdit(c.id);
                   }}
-                  autoFocus
-                  aria-label="แก้ไขชื่อบทเรียน"
-                />
-              </form>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={c.done}
-                  onClick={() => dispatch({ type: "toggleChapter", subjectId: subject.id, chapterId: c.id })}
-                  className="flex flex-1 items-center gap-3 rounded-md py-0.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
                 >
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-                      c.done ? "border-sage bg-sage text-sheet" : "border-line-strong bg-sheet group-hover:border-ink-muted"
-                    )}
+                  <input
+                    className={cn(inputClass, "h-8 text-sm")}
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={() => commitChapterEdit(c.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setEditingChapterId(null);
+                    }}
+                    autoFocus
+                    aria-label="แก้ไขชื่อบทเรียน"
+                  />
+                </form>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={c.done}
+                    onClick={() => dispatch({ type: "toggleChapter", subjectId: subject.id, chapterId: c.id })}
+                    className="flex flex-1 items-center gap-3 rounded-md py-0.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
                   >
-                    {c.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
-                  </span>
-                  <span className="font-mono text-xs text-ink-muted">{String(i + 1).padStart(2, "0")}</span>
-                  <span className={c.done ? "text-ink-muted line-through decoration-line-strong" : "text-ink"}>
-                    {c.title}
-                  </span>
-                  {isTargetToday && (
-                    <span className="ml-auto rounded-full bg-terracotta-tint px-2 py-0.5 text-[10px] font-semibold text-terracotta-deep">
-                      เป้าหมายวันนี้
+                    <span
+                      className={cn(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                        c.done ? "border-sage bg-sage text-sheet" : "border-line-strong bg-sheet group-hover:border-ink-muted"
+                      )}
+                    >
+                      {c.done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
                     </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingChapterId(c.id);
-                    setEditingTitle(c.title);
-                  }}
-                  className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-paper-deep hover:text-ink hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-                  aria-label={`เปลี่ยนชื่อบท ${c.title}`}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })}
-                  className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-danger-tint hover:text-danger-deep hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-                  aria-label={`ลบบท ${c.title}`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </>
-            )}
-          </li>
+                    <span className="font-mono text-xs text-ink-muted">{String(i + 1).padStart(2, "0")}</span>
+                    <span className={c.done ? "text-ink-muted line-through decoration-line-strong" : "text-ink"}>
+                      {c.title}
+                    </span>
+                    {isTargetToday && (
+                      <span className="ml-auto rounded-full bg-terracotta-tint px-2 py-0.5 text-[11px] font-semibold text-terracotta-deep">
+                        เป้าหมายวันนี้
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingChapterId(c.id);
+                      setEditingTitle(c.title);
+                    }}
+                    className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-paper-deep hover:text-ink hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+                    aria-label={`เปลี่ยนชื่อบท ${c.title}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })}
+                    className="rounded p-1.5 text-ink-muted opacity-70 transition-opacity hover:bg-danger-tint hover:text-danger-deep hover:opacity-100 focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+                    aria-label={`ลบบท ${c.title}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </li>
           );
         })}
       </ul>

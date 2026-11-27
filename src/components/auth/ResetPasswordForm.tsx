@@ -79,9 +79,9 @@ export function ResetPasswordForm() {
       {error && (
         <div
           role="alert"
-          className="mb-5 flex items-start gap-2.5 rounded-xl border border-slate/30 bg-slate-tint px-3.5 py-3 text-sm text-slate-deep"
+          className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-tint px-3.5 py-3 text-sm text-danger-deep"
         >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <span>{error}</span>
         </div>
       )}
@@ -108,9 +108,9 @@ export function ResetPasswordForm() {
         <div className="space-y-4">
           <div
             role="alert"
-            className="flex items-start gap-2.5 rounded-xl border border-slate/30 bg-slate-tint px-4 py-3.5 text-sm text-slate-deep"
+            className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-tint px-4 py-3.5 text-sm text-danger-deep"
           >
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-slate" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
             <span>ลิงก์ตั้งรหัสผ่านใหม่ไม่ถูกต้องหรือไม่ครบถ้วน กรุณาขอลิงก์ใหม่อีกครั้ง</span>
           </div>
           <Link href="/forgot-password" className={cn(buttonVariants(), "w-full")}>

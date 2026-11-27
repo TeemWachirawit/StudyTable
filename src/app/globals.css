@@ -48,6 +48,11 @@
   --color-plum-deep: #5b21b6;
   --color-plum-tint: #f5f3ff;
 
+  /* Supporting Accent 6: Scholarly Indigo (Library) */
+  --color-indigo: #4f46e5;
+  --color-indigo-deep: #3730a3;
+  --color-indigo-tint: #eef2ff;
+
   --font-sans: var(--font-ibm-sans), "IBM Plex Sans Thai", "Noto Sans Thai", Tahoma, sans-serif;
   --font-display: var(--font-noto-serif), "Noto Serif Thai", Georgia, serif;
   --font-mono: var(--font-ibm-mono), "IBM Plex Mono", Consolas, monospace;
@@ -98,6 +103,10 @@
     --color-plum: #8b5cf6;
     --color-plum-deep: #c4b5fd;
     --color-plum-tint: #2e1065;
+
+    --color-indigo: #818cf8;
+    --color-indigo-deep: #c7d2fe;
+    --color-indigo-tint: #1e1b4b;
   }
 
   body {
