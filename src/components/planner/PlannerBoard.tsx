@@ -8,6 +8,7 @@ import {
   Check,
   Download,
   GraduationCap,
+  GripVertical,
   Loader2,
   MapPin,
   Plus,
@@ -41,10 +42,13 @@ import { SubjectEditor } from "@/components/table/SubjectEditor";
 const ROW_REM = 4.5;
 const HOURS = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
 const SNAP_MINUTES = 30;
+const TOUCH_LONG_PRESS_MS = 260;
 
 interface DragSession {
   block: StudyBlock;
   mode: "move" | "resize";
+  scope: "mobile" | "week";
+  pointerType: string;
   startX: number;
   startY: number;
   grabOffsetMins: number;
@@ -81,9 +85,14 @@ export function PlannerBoard() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const mobileScrollRef = useRef<HTMLDivElement>(null);
   const firstDayColRef = useRef<HTMLDivElement>(null);
+  const mobileDayColRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const dragActiveRef = useRef(false);
   const suppressClickRef = useRef(false);
   const today = useMemo(() => weekdayIndex(new Date()), []);
   const [mobileDay, setMobileDay] = useState<number | "all">(today);
+
+  dragActiveRef.current = Boolean(drag?.active);
 
   const subjectById = useMemo(
     () => new Map(state.subjects.map((s) => [s.id, s])),
@@ -129,33 +138,78 @@ export function PlannerBoard() {
     return () => clearTimeout(t);
   }, [dragNotice]);
 
-  // Global pointer listeners while dragging or resizing a block
+  const clearLongPress = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  // Global pointer & touch listeners while dragging or resizing a block
   const isDragging = drag !== null;
   useEffect(() => {
     if (!isDragging) return;
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (dragActiveRef.current) {
+        e.preventDefault();
+      }
+    };
+
     const handlePointerMove = (e: PointerEvent) => {
-      const colEl = firstDayColRef.current;
-      if (!colEl) return;
-      const rect = colEl.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-
-      const pxPerMin = rect.height / (HOURS.length * 60);
-
       setDrag((prev) => {
         if (!prev) return null;
         const dist = Math.hypot(e.clientX - prev.startX, e.clientY - prev.startY);
+
+        // On touch, moving finger before long-press fires cancels drag so scrolling stays smooth
+        if (!prev.active && prev.pointerType !== "mouse" && prev.mode === "move") {
+          if (dist > 10) {
+            clearLongPress();
+            return null;
+          }
+          return prev;
+        }
+
         const active = prev.active || prev.mode === "resize" || dist > 6;
         if (!active) return prev;
 
+        const colEl = prev.scope === "mobile" ? mobileDayColRef.current : firstDayColRef.current;
+        const containerEl = prev.scope === "mobile" ? mobileScrollRef.current : scrollRef.current;
+        if (!colEl) return prev;
+
+        // Auto-scroll container when dragging near top/bottom/side edges
+        if (containerEl) {
+          const cRect = containerEl.getBoundingClientRect();
+          const edgeY = 54;
+          if (e.clientY < cRect.top + edgeY) {
+            containerEl.scrollTop -= 14;
+          } else if (e.clientY > cRect.bottom - edgeY) {
+            containerEl.scrollTop += 14;
+          }
+          if (prev.scope === "week") {
+            const edgeX = 48;
+            if (e.clientX < cRect.left + edgeX) {
+              containerEl.scrollLeft -= 16;
+            } else if (e.clientX > cRect.right - edgeX) {
+              containerEl.scrollLeft += 16;
+            }
+          }
+        }
+
+        const rect = colEl.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return prev;
+
+        const pxPerMin = rect.height / (HOURS.length * 60);
         const origStart = blockStartMinutes(prev.block);
         const origEnd = blockEndMinutes(prev.block);
         const origDur = Math.max(SNAP_MINUTES, origEnd - origStart);
 
         let nextCandidate: StudyBlock;
         if (prev.mode === "move") {
-          const rawDay = Math.floor((e.clientX - rect.left) / rect.width);
-          const day = Math.max(0, Math.min(6, rawDay));
+          const day =
+            prev.scope === "mobile"
+              ? prev.block.day
+              : Math.max(0, Math.min(6, Math.floor((e.clientX - rect.left) / rect.width)));
           const pointerMins = FIRST_HOUR * 60 + (e.clientY - rect.top) / pxPerMin;
           const snappedStart = Math.round((pointerMins - prev.grabOffsetMins) / SNAP_MINUTES) * SNAP_MINUTES;
           const clampedStart = Math.max(
@@ -184,13 +238,14 @@ export function PlannerBoard() {
     };
 
     const handlePointerUp = () => {
+      clearLongPress();
       setDrag((prev) => {
         if (!prev) return null;
         if (prev.active) {
           suppressClickRef.current = true;
-          setTimeout(() => {
+          window.setTimeout(() => {
             suppressClickRef.current = false;
-          }, 0);
+          }, 50);
 
           const changed =
             prev.candidate.day !== prev.block.day ||
@@ -209,10 +264,13 @@ export function PlannerBoard() {
       });
     };
 
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
     window.addEventListener("pointercancel", handlePointerUp);
     return () => {
+      clearLongPress();
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
@@ -222,31 +280,52 @@ export function PlannerBoard() {
   const startBlockDrag = (
     e: React.PointerEvent,
     block: StudyBlock,
-    mode: "move" | "resize"
+    mode: "move" | "resize",
+    scope: "mobile" | "week",
+    immediate = false
   ) => {
-    if (e.button !== 0) return;
-    const colEl = firstDayColRef.current;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const colEl = scope === "mobile" ? mobileDayColRef.current : firstDayColRef.current;
     if (!colEl) return;
     const rect = colEl.getBoundingClientRect();
+    if (rect.height <= 0) return;
     const pxPerMin = rect.height / (HOURS.length * 60);
     const pointerMins = FIRST_HOUR * 60 + (e.clientY - rect.top) / pxPerMin;
     const grabOffsetMins = pointerMins - blockStartMinutes(block);
 
-    if (mode === "resize") {
+    const activateImmediately = immediate || mode === "resize";
+    if (activateImmediately) {
       e.stopPropagation();
       e.preventDefault();
+      if (e.pointerType !== "mouse" && typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(12);
+      }
     }
+
+    clearLongPress();
 
     setDrag({
       block,
       mode,
+      scope,
+      pointerType: e.pointerType,
       startX: e.clientX,
       startY: e.clientY,
       grabOffsetMins,
-      active: mode === "resize",
+      active: activateImmediately,
       candidate: block,
       hasConflict: false,
     });
+
+    // Touch long-press anywhere on block activates drag without blocking normal scroll
+    if (!activateImmediately && e.pointerType !== "mouse" && mode === "move") {
+      longPressTimerRef.current = window.setTimeout(() => {
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(15);
+        }
+        setDrag((prev) => (prev ? { ...prev, active: true } : null));
+      }, TOUCH_LONG_PRESS_MS);
+    }
   };
 
   const handleExportPng = () => {
@@ -478,6 +557,28 @@ export function PlannerBoard() {
           </div>
         </div>
 
+        <p className="mb-3 text-[11px] text-ink-muted md:hidden">
+          กดค้างหรือลากที่ปุ่มจับเพื่อย้ายเวลา · ดึงแถบล่างเพื่อปรับความยาว
+        </p>
+
+        {/* Floating Live Time HUD while dragging/resizing */}
+        {drag?.active && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={cn(
+              "pointer-events-none fixed top-16 left-1/2 z-50 -translate-x-1/2 rounded-full border px-4 py-1.5 font-mono text-xs font-semibold shadow-lg backdrop-blur-md",
+              drag.hasConflict
+                ? "border-danger bg-danger text-white"
+                : "border-terracotta/40 bg-sheet/95 text-ink"
+            )}
+          >
+            {drag.hasConflict
+              ? `ชนเวลา · วัน${DAYS[drag.candidate.day]} ${formatBlockTime(drag.candidate)}`
+              : `วัน${DAYS[drag.candidate.day]} · ${formatBlockTime(drag.candidate)}`}
+          </div>
+        )}
+
         {dragNotice && (
           <div
             role="alert"
@@ -594,6 +695,7 @@ export function PlannerBoard() {
                 </div>
               ))}
               <div
+                ref={mobileDayColRef}
                 className="pointer-events-none relative"
                 style={{
                   gridColumn: 2,
@@ -612,14 +714,27 @@ export function PlannerBoard() {
                     const heightRem = ((endM - startM) / 60) * ROW_REM;
                     const chapterDone = subject.chapters.some((c) => c.title === b.topic && c.done);
                     const isClass = isClassBlock(b);
+                    const isBeingDragged = drag?.active && drag.block.id === b.id;
 
                     return (
-                      <button
+                      <div
                         key={b.id}
-                        type="button"
-                        onClick={() => setDraft(b)}
+                        role="button"
+                        tabIndex={0}
+                        onPointerDown={(e) => startBlockDrag(e, b, "move", "mobile")}
+                        onClick={() => {
+                          if (suppressClickRef.current) return;
+                          setDraft(b);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setDraft(b);
+                          }
+                        }}
                         className={cn(
-                          "pointer-events-auto absolute inset-x-[3px] z-[5] flex flex-col overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
+                          "pointer-events-auto absolute inset-x-[3px] z-[5] flex select-none flex-col overflow-hidden rounded-lg border px-3 py-1.5 pb-3 text-left text-xs leading-snug transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:outline-none",
+                          isBeingDragged && "opacity-30",
                           isClass && "ring-1 ring-terracotta/25 shadow-2xs",
                           sc.blockClass
                         )}
@@ -630,10 +745,20 @@ export function PlannerBoard() {
                         }}
                       >
                         <div className="flex items-center justify-between gap-1.5">
-                          <span className="truncate font-semibold">
-                            {subject.emoji && <span className="mr-1 select-none">{subject.emoji}</span>}
-                            {subject.name}
-                          </span>
+                          <div className="flex min-w-0 items-center gap-1">
+                            <span
+                              onPointerDown={(e) => startBlockDrag(e, b, "move", "mobile", true)}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="ลากเพื่อย้ายเวลา"
+                              className="-ml-1 inline-flex touch-none items-center justify-center rounded p-1 opacity-65 active:opacity-100"
+                            >
+                              <GripVertical className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="truncate font-semibold">
+                              {subject.emoji && <span className="mr-1 select-none">{subject.emoji}</span>}
+                              {subject.name}
+                            </span>
+                          </div>
                           <span
                             className={cn(
                               "rounded px-1.5 py-0.5 text-[11px] leading-none font-bold shrink-0",
@@ -664,9 +789,60 @@ export function PlannerBoard() {
                             {formatBlockTime(b)}
                           </span>
                         )}
-                      </button>
+
+                        {/* Touch-friendly bottom resize handle */}
+                        <div
+                          onPointerDown={(e) => startBlockDrag(e, b, "resize", "mobile", true)}
+                          onClick={(e) => e.stopPropagation()}
+                          title="ดึงเพื่อปรับระยะเวลา"
+                          className="absolute inset-x-0 bottom-0 flex h-5 touch-none cursor-ns-resize items-end justify-center pb-1"
+                        >
+                          <span className="h-1 w-10 rounded-full bg-current opacity-40" />
+                        </div>
+                      </div>
                     );
                   })}
+
+                {/* Mobile Live Drag / Resize Ghost Preview */}
+                {drag?.active && drag.scope === "mobile" && (() => {
+                  const ghostSubject = subjectById.get(drag.candidate.subjectId);
+                  if (!ghostSubject) return null;
+                  const ghostColor = getSubjectColor(ghostSubject.color);
+                  const gStartM = blockStartMinutes(drag.candidate);
+                  const gEndM = blockEndMinutes(drag.candidate);
+                  const gTopRem = ((gStartM - FIRST_HOUR * 60) / 60) * ROW_REM;
+                  const gHeightRem = ((gEndM - gStartM) / 60) * ROW_REM;
+                  return (
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute inset-x-[3px] z-20 flex flex-col overflow-hidden rounded-lg border-2 px-3 py-1.5 text-left text-xs leading-snug shadow-lg",
+                        drag.hasConflict
+                          ? "border-danger bg-danger-tint text-danger-deep"
+                          : cn("ring-2 ring-terracotta/40", ghostColor.blockClass)
+                      )}
+                      style={{
+                        ...(!drag.hasConflict ? ghostColor.blockStyle : undefined),
+                        top: `${gTopRem}rem`,
+                        height: `calc(${gHeightRem}rem - 6px)`,
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="truncate font-semibold">
+                          {ghostSubject.emoji && <span className="mr-1">{ghostSubject.emoji}</span>}
+                          {ghostSubject.name}
+                        </span>
+                        {drag.hasConflict && (
+                          <span className="shrink-0 rounded bg-danger px-1.5 py-0.5 text-[11px] leading-none font-bold text-white">
+                            ชนเวลา
+                          </span>
+                        )}
+                      </div>
+                      <span className="mt-auto font-mono text-[11px] font-semibold">
+                        {formatBlockTime(drag.candidate)}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -751,7 +927,7 @@ export function PlannerBoard() {
 
             {/* Timetable blocks */}
             {DAYS.map((_, i) => {
-              const showGhostHere = drag?.active && drag.candidate.day === i;
+              const showGhostHere = drag?.active && drag.scope === "week" && drag.candidate.day === i;
               const ghostSubject = showGhostHere ? subjectById.get(drag.candidate.subjectId) : undefined;
               const ghostColor = ghostSubject ? getSubjectColor(ghostSubject.color) : null;
               const ghostStartM = showGhostHere ? blockStartMinutes(drag.candidate) : 0;
@@ -788,7 +964,7 @@ export function PlannerBoard() {
                           key={b.id}
                           role="button"
                           tabIndex={0}
-                          onPointerDown={(e) => startBlockDrag(e, b, "move")}
+                          onPointerDown={(e) => startBlockDrag(e, b, "move", "week")}
                           onClick={() => {
                             if (suppressClickRef.current) return;
                             setDraft(b);
@@ -852,14 +1028,14 @@ export function PlannerBoard() {
                             </span>
                           )}
 
-                          {/* Bottom resize handle */}
+                          {/* Bottom resize handle (always visible on touch, hover on desktop) */}
                           <div
-                            onPointerDown={(e) => startBlockDrag(e, b, "resize")}
+                            onPointerDown={(e) => startBlockDrag(e, b, "resize", "week", true)}
                             onClick={(e) => e.stopPropagation()}
                             title="ดึงเพื่อปรับระยะเวลา"
-                            className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize items-center justify-center opacity-0 transition-opacity group-hover/block:opacity-100"
+                            className="absolute inset-x-0 bottom-0 flex h-4 touch-none cursor-ns-resize items-end justify-center pb-1 opacity-70 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/block:opacity-100"
                           >
-                            <span className="h-1 w-8 rounded-full bg-current opacity-40" />
+                            <span className="h-1 w-8 rounded-full bg-current opacity-45" />
                           </div>
                         </div>
                       );
