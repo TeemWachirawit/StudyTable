@@ -146,6 +146,7 @@ export interface TodayTodoItem {
   /** For custom todos: DailyTodo.id; for planner blocks: StudyBlock.id */
   id: string;
   subjectId: string;
+  chapterIds?: string[];
   title: string;
   done: boolean;
   /** Optional formatted time range for planner blocks (e.g. "18:00–20:00") */
@@ -194,6 +195,7 @@ export function getTodayTodoItems(
       source: "custom" as const,
       id: t.id,
       subjectId: t.subjectId,
+      chapterIds: t.chapterIds ?? [],
       title: t.title,
       done: t.done,
     }));

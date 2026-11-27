@@ -21,13 +21,13 @@ type Action =
   | { type: "reset" }
   | { type: "saveSubject"; id?: string; name: string; color: SubjectColor; emoji?: string }
   | {
-      type: "importLibrarySubject";
-      name: string;
-      color: SubjectColor;
-      emoji?: string;
-      chapters: string[];
-      mergeIntoSubjectId?: string;
-    }
+    type: "importLibrarySubject";
+    name: string;
+    color: SubjectColor;
+    emoji?: string;
+    chapters: string[];
+    mergeIntoSubjectId?: string;
+  }
   | { type: "deleteSubject"; id: string }
   | { type: "addStudyTime"; subjectId: string; seconds: number }
   | { type: "resetStudyTime"; subjectId: string }
@@ -40,7 +40,7 @@ type Action =
   | { type: "saveExam"; exam: Exam }
   | { type: "saveExams"; exams: Exam[] }
   | { type: "deleteExam"; id: string }
-  | { type: "addTodo"; date: string; subjectId: string; title: string }
+  | { type: "addTodo"; date: string; subjectId: string; title: string; chapterIds?: string[] }
   | { type: "toggleTodo"; id: string }
   | { type: "toggleBlockTodo"; date: string; blockId: string; subjectId: string; title: string }
   | { type: "deleteTodo"; id: string };
@@ -133,7 +133,7 @@ function reducer(state: StudyState, action: Action): StudyState {
         blocks: state.blocks.filter((b) => b.subjectId !== action.id),
         exams: state.exams.filter((e) => e.subjectId !== action.id),
         todos: (state.todos ?? []).map((t) =>
-          t.subjectId === action.id ? { ...t, subjectId: "" } : t
+          t.subjectId === action.id ? { ...t, subjectId: "", chapterIds: [] } : t
         ),
       };
     case "addStudyTime": {
@@ -178,20 +178,20 @@ function reducer(state: StudyState, action: Action): StudyState {
         subjects: state.subjects.map((s) =>
           s.id === action.subjectId
             ? {
-                ...s,
-                chapters: s.chapters.map((c) =>
-                  c.id === action.chapterId ? { ...c, title: action.title } : c
-                ),
-              }
+              ...s,
+              chapters: s.chapters.map((c) =>
+                c.id === action.chapterId ? { ...c, title: action.title } : c
+              ),
+            }
             : s
         ),
         blocks:
           oldTitle && oldTitle !== action.title
             ? state.blocks.map((b) =>
-                b.subjectId === action.subjectId && b.topic === oldTitle
-                  ? { ...b, topic: action.title }
-                  : b
-              )
+              b.subjectId === action.subjectId && b.topic === oldTitle
+                ? { ...b, topic: action.title }
+                : b
+            )
             : state.blocks,
       };
     }
@@ -221,6 +221,11 @@ function reducer(state: StudyState, action: Action): StudyState {
           ...e,
           chapterIds: e.chapterIds.filter((id) => id !== action.chapterId),
         })),
+        todos: (state.todos ?? []).map((t) =>
+          t.chapterIds?.includes(action.chapterId)
+            ? { ...t, chapterIds: t.chapterIds.filter((id) => id !== action.chapterId) }
+            : t
+        ),
       };
 
     case "saveBlock":
@@ -245,6 +250,9 @@ function reducer(state: StudyState, action: Action): StudyState {
       const title = action.title.trim();
       if (!title) return state;
       const todos = state.todos ?? [];
+      const cleanChapterIds = Array.isArray(action.chapterIds)
+        ? Array.from(new Set(action.chapterIds.filter(Boolean)))
+        : [];
       return {
         ...state,
         todos: [
@@ -253,6 +261,7 @@ function reducer(state: StudyState, action: Action): StudyState {
             id: uid(),
             date: action.date,
             subjectId: action.subjectId,
+            chapterIds: action.subjectId ? cleanChapterIds : [],
             title,
             done: false,
           },

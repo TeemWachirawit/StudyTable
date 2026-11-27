@@ -148,6 +148,10 @@ function isValidStudyState(state: unknown): state is StudyState {
         !/^\d{4}-\d{2}-\d{2}$/.test(t.date) ||
         typeof t.subjectId !== "string" ||
         (t.subjectId !== "" && !subjectIds.has(t.subjectId)) ||
+        (t.chapterIds !== undefined &&
+          (!Array.isArray(t.chapterIds) ||
+            t.chapterIds.length > MAX_CHAPTERS_PER_SUBJECT ||
+            t.chapterIds.some((id) => typeof id !== "string" || id.length > 100))) ||
         typeof t.title !== "string" ||
         t.title.length > 200 ||
         typeof t.done !== "boolean" ||

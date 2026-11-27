@@ -62,6 +62,8 @@ export interface DailyTodo {
   date: string;
   /** Optional linked Subject ID (empty string if general task) */
   subjectId: string;
+  /** Optional selected Chapter IDs within the linked subject */
+  chapterIds?: string[];
   title: string;
   done: boolean;
   /** If tracking completion of a Planner StudyBlock for that date */

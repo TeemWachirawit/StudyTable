@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
+  BookOpen,
   CalendarClock,
   Check,
   ChevronDown,
@@ -28,6 +29,7 @@ export function TodayTodoCard({ compact = false }: Props) {
   const { state, dispatch } = useStudyStore();
   const [newTitle, setNewTitle] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
   const today = useMemo(() => new Date(), []);
@@ -39,22 +41,50 @@ export function TodayTodoCard({ compact = false }: Props) {
     [state.subjects]
   );
 
+  const selectedSubject = selectedSubjectId ? subjectById.get(selectedSubjectId) : undefined;
+
   const { items, done, total, pct } = useMemo(
     () => getTodayTodoItems(state, today),
     [state, today]
   );
 
+  const toggleSelectedChapter = (chapterId: string) => {
+    setSelectedChapterIds((prev) =>
+      prev.includes(chapterId) ? prev.filter((id) => id !== chapterId) : [...prev, chapterId]
+    );
+  };
+
+  const handleSubjectChange = (nextId: string) => {
+    setSelectedSubjectId(nextId);
+    setSelectedChapterIds([]);
+  };
+
+  const canSubmit = newTitle.trim().length > 0 || selectedChapterIds.length > 0;
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = newTitle.trim();
-    if (!trimmed) return;
+    if (!canSubmit) return;
+
+    let finalTitle = newTitle.trim();
+    if (!finalTitle && selectedSubject && selectedChapterIds.length > 0) {
+      if (selectedChapterIds.length === 1) {
+        const ch = selectedSubject.chapters.find((c) => c.id === selectedChapterIds[0]);
+        finalTitle = ch ? `อ่านบท: ${ch.title}` : `อ่าน ${selectedSubject.name}`;
+      } else {
+        finalTitle = `อ่าน ${selectedChapterIds.length} บทที่เลือก`;
+      }
+    }
+    if (!finalTitle) return;
+
     dispatch({
       type: "addTodo",
       date: todayISO,
       subjectId: selectedSubjectId,
-      title: trimmed,
+      chapterIds: selectedSubjectId ? selectedChapterIds : [],
+      title: finalTitle,
     });
     setNewTitle("");
+    setSelectedChapterIds([]);
   };
 
   return (
@@ -83,7 +113,7 @@ export function TodayTodoCard({ compact = false }: Props) {
             วันนี้ต้องอ่านอะไรบ้าง
           </h2>
           <p className="mt-0.5 text-xs text-ink-soft">
-            รวมตารางอ่านของวันนี้และรายการที่เพิ่มเอง · กดที่วิชาเพื่อเปิดขึ้นบนสุดในหน้า Table
+            รวมตารางอ่านของวันนี้และรายการที่เพิ่มเอง · เลือกได้หลายบท และกดที่วิชาเพื่อเปิดขึ้นบนสุดในหน้า Table
           </p>
         </div>
 
@@ -134,34 +164,118 @@ export function TodayTodoCard({ compact = false }: Props) {
       {!collapsed && (
         <div className="p-5 sm:p-6">
           {/* Quick Add Form */}
-          <form onSubmit={handleAdd} className="mb-4 flex flex-col gap-2 sm:flex-row">
-            <select
-              aria-label="เลือกวิชาสำหรับ To-Do"
-              value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className={cn(inputClass, "h-10 sm:w-48")}
-            >
-              <option value="">ทั่วไป (ไม่ระบุวิชา)</option>
-              {state.subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.emoji ? `${s.emoji} ` : ""}
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <div className="flex flex-1 gap-2">
-              <input
-                type="text"
-                className={cn(inputClass, "h-10 flex-1")}
-                placeholder="เพิ่มสิ่งที่ต้องอ่านวันนี้ เช่น ทำโจทย์แคลคูลัส 20 ข้อ..."
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                maxLength={200}
-              />
-              <Button type="submit" size="sm" className="h-10 shrink-0 px-3.5" disabled={!newTitle.trim()}>
-                <Plus className="h-4 w-4" /> เพิ่ม
-              </Button>
+          <form onSubmit={handleAdd} className="mb-4 space-y-2.5">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <select
+                aria-label="เลือกวิชาสำหรับ To-Do"
+                value={selectedSubjectId}
+                onChange={(e) => handleSubjectChange(e.target.value)}
+                className={cn(inputClass, "h-10 sm:w-52")}
+              >
+                <option value="">ทั่วไป (ไม่ระบุวิชา)</option>
+                {state.subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.emoji ? `${s.emoji} ` : ""}
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex flex-1 gap-2">
+                <input
+                  type="text"
+                  className={cn(inputClass, "h-10 flex-1")}
+                  placeholder={
+                    selectedSubject && selectedSubject.chapters.length > 0
+                      ? "ชื่อรายการ (เว้นว่างได้หากเลือกบทด้านล่าง)..."
+                      : "เพิ่มสิ่งที่ต้องอ่านวันนี้ เช่น ทำโจทย์แคลคูลัส 20 ข้อ..."
+                  }
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  maxLength={200}
+                />
+                <Button type="submit" size="sm" className="h-10 shrink-0 px-3.5" disabled={!canSubmit}>
+                  <Plus className="h-4 w-4" /> เพิ่ม
+                </Button>
+              </div>
             </div>
+
+            {/* Multi-chapter selector when a subject with chapters is chosen */}
+            {selectedSubject && selectedSubject.chapters.length > 0 && (
+              <div className="rounded-xl border border-line bg-paper/70 px-3.5 py-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                    <BookOpen className="h-3.5 w-3.5 text-terracotta" />
+                    เลือกบทที่จะอ่านในวิชา {selectedSubject.name} (เลือกได้หลายบท)
+                    {selectedChapterIds.length > 0 && (
+                      <span className="rounded-full bg-terracotta-tint px-2 py-0.5 font-mono text-[11px] font-bold text-terracotta-deep">
+                        เลือกแล้ว {selectedChapterIds.length} บท
+                      </span>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    {selectedSubject.chapters.some((c) => !c.done) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedChapterIds(
+                            selectedSubject.chapters.filter((c) => !c.done).map((c) => c.id)
+                          )
+                        }
+                        className="font-medium text-terracotta-deep hover:underline"
+                      >
+                        เลือกบทที่ยังไม่อ่าน
+                      </button>
+                    )}
+                    {selectedChapterIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedChapterIds([])}
+                        className="font-medium text-ink-muted hover:text-ink hover:underline"
+                      >
+                        ล้าง
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto pr-1">
+                  {selectedSubject.chapters.map((ch) => {
+                    const picked = selectedChapterIds.includes(ch.id);
+                    return (
+                      <button
+                        key={ch.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={picked}
+                        onClick={() => toggleSelectedChapter(ch.id)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
+                          picked
+                            ? "border-terracotta bg-terracotta-tint text-terracotta-deep"
+                            : "border-line-strong bg-sheet text-ink-soft hover:border-ink-muted hover:text-ink"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-xs border",
+                            picked
+                              ? "border-terracotta bg-terracotta text-sheet"
+                              : "border-line-strong bg-sheet"
+                          )}
+                        >
+                          {picked && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                        </span>
+                        <span className="max-w-52 truncate">{ch.title}</span>
+                        {ch.done && (
+                          <span className="rounded bg-sage-tint px-1 py-0.2 text-[10px] font-medium text-sage-deep">
+                            อ่านแล้ว
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </form>
 
           {/* Checklist */}
@@ -180,17 +294,29 @@ export function TodayTodoCard({ compact = false }: Props) {
               {items.map((item) => {
                 const subj = item.subjectId ? subjectById.get(item.subjectId) : undefined;
                 const color = subj ? getSubjectColor(subj.color) : null;
-                const tableHref = subj ? `/table?subject=${encodeURIComponent(subj.id)}` : null;
+                const linkedChapters =
+                  subj && item.chapterIds && item.chapterIds.length > 0
+                    ? subj.chapters.filter((c) => item.chapterIds?.includes(c.id))
+                    : [];
+                const linkedDoneCount = linkedChapters.filter((c) => c.done).length;
+
+                const tableHref = subj
+                  ? linkedChapters.length > 0
+                    ? `/table?subject=${encodeURIComponent(subj.id)}&chapters=${encodeURIComponent(
+                        linkedChapters.map((c) => c.id).join(",")
+                      )}`
+                    : `/table?subject=${encodeURIComponent(subj.id)}`
+                  : null;
 
                 return (
                   <li
                     key={item.key}
                     className={cn(
-                      "group flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 transition-colors sm:flex-nowrap",
+                      "group flex flex-wrap items-start justify-between gap-2.5 px-3.5 py-2.5 transition-colors sm:flex-nowrap",
                       item.done ? "bg-paper/60" : "bg-sheet hover:bg-paper/70"
                     )}
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
                       <button
                         type="button"
                         role="checkbox"
@@ -210,7 +336,7 @@ export function TodayTodoCard({ compact = false }: Props) {
                           }
                         }}
                         className={cn(
-                          "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
                           item.done
                             ? "border-sage bg-sage text-sheet"
                             : "border-line-strong bg-sheet hover:border-ink-muted"
@@ -249,6 +375,12 @@ export function TodayTodoCard({ compact = false }: Props) {
                               {item.timeLabel}
                             </span>
                           )}
+
+                          {linkedChapters.length > 0 && (
+                            <span className="rounded-md bg-paper-deep px-1.5 py-0.5 font-mono text-[11px] font-medium text-ink-soft">
+                              {linkedDoneCount}/{linkedChapters.length} บท
+                            </span>
+                          )}
                         </div>
 
                         {tableHref ? (
@@ -270,6 +402,48 @@ export function TodayTodoCard({ compact = false }: Props) {
                           >
                             {item.title}
                           </p>
+                        )}
+
+                        {/* Interactive chapter pills for multi-chapter todos */}
+                        {subj && linkedChapters.length > 0 && (
+                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                            {linkedChapters.map((ch) => (
+                              <li key={ch.id}>
+                                <button
+                                  type="button"
+                                  role="checkbox"
+                                  aria-checked={ch.done}
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "toggleChapter",
+                                      subjectId: subj.id,
+                                      chapterId: ch.id,
+                                    })
+                                  }
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta",
+                                    ch.done
+                                      ? "border-sage/35 bg-sage-tint text-sage-deep"
+                                      : "border-line-strong bg-paper text-ink-soft hover:border-ink-muted hover:text-ink"
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "flex h-3 w-3 items-center justify-center rounded-xs border",
+                                      ch.done
+                                        ? "border-sage bg-sage text-sheet"
+                                        : "border-line-strong bg-sheet"
+                                    )}
+                                  >
+                                    {ch.done && <Check className="h-2 w-2" strokeWidth={3} />}
+                                  </span>
+                                  <span className={ch.done ? "line-through opacity-80" : undefined}>
+                                    {ch.title}
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
                         )}
                       </div>
                     </div>

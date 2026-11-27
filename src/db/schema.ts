@@ -176,6 +176,7 @@ export const dailyTodos = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     date: text("date").notNull(),
     subjectId: text("subject_id"),
+    chapterIds: jsonb("chapter_ids").$type<string[]>().default([]).notNull(),
     title: text("title").notNull(),
     done: boolean("done").default(false).notNull(),
     sourceBlockId: text("source_block_id"),

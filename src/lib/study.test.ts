@@ -374,7 +374,7 @@ describe("today todo and subject pinning", () => {
         exams: [],
         todos: [
           { id: "t-block", date: "2026-11-27", subjectId: "s1", title: "แคลคูลัส", done: true, sourceBlockId: "b-early" },
-          { id: "t-custom", date: "2026-11-27", subjectId: "s3", title: "ทบทวนพันธุศาสตร์", done: false },
+          { id: "t-custom", date: "2026-11-27", subjectId: "s3", chapterIds: ["c1", "c2"], title: "ทบทวนพันธุศาสตร์", done: false },
           { id: "t-yesterday", date: "2026-11-26", subjectId: "s2", title: "งานเมื่อวาน", done: false },
         ],
       },
@@ -384,7 +384,13 @@ describe("today todo and subject pinning", () => {
     expect(result.items).toHaveLength(3);
     expect(result.items[0]).toMatchObject({ source: "planner", id: "b-early", done: true, subjectId: "s1" });
     expect(result.items[1]).toMatchObject({ source: "planner", id: "b-late", done: false, subjectId: "s2" });
-    expect(result.items[2]).toMatchObject({ source: "custom", id: "t-custom", done: false, subjectId: "s3" });
+    expect(result.items[2]).toMatchObject({
+      source: "custom",
+      id: "t-custom",
+      done: false,
+      subjectId: "s3",
+      chapterIds: ["c1", "c2"],
+    });
     expect(result.done).toBe(1);
     expect(result.total).toBe(3);
     expect(result.pct).toBe(33);

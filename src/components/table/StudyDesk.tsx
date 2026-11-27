@@ -24,12 +24,23 @@ export function StudyDesk() {
   const timerSectionRef = useRef<HTMLDivElement>(null);
 
   const paramSubjectId = searchParams.get("subject");
+  const paramChapters = searchParams.get("chapters");
   const pinnedSubjectId = useMemo(() => {
     if (paramSubjectId && state.subjects.some((s) => s.id === paramSubjectId)) {
       return paramSubjectId;
     }
     return null;
   }, [paramSubjectId, state.subjects]);
+
+  const targetChapterIds = useMemo(() => {
+    if (!pinnedSubjectId || !paramChapters) return new Set<string>();
+    return new Set(
+      paramChapters
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    );
+  }, [pinnedSubjectId, paramChapters]);
 
   const orderedSubjects = useMemo(
     () => orderSubjectsWithPinned(state.subjects, pinnedSubjectId),
@@ -152,6 +163,7 @@ export function StudyDesk() {
                 key={s.id}
                 subject={s}
                 isPinned={s.id === pinnedSubjectId}
+                targetChapterIds={s.id === pinnedSubjectId ? targetChapterIds : undefined}
                 onUnpin={clearPinnedSubject}
                 isFocused={s.id === effectiveFocusSubjectId}
                 onFocus={() => handleFocusSubject(s.id)}
@@ -207,6 +219,7 @@ function Stat({
 function SubjectPanel({
   subject,
   isPinned,
+  targetChapterIds,
   onUnpin,
   isFocused,
   onFocus,
@@ -214,6 +227,7 @@ function SubjectPanel({
 }: {
   subject: Subject;
   isPinned: boolean;
+  targetChapterIds?: Set<string>;
   onUnpin: () => void;
   isFocused: boolean;
   onFocus: () => void;
@@ -389,10 +403,15 @@ function SubjectPanel({
             ยังไม่มีบทเรียน พิมพ์ชื่อบทเรียนด้านบนเพื่อเริ่มบันทึก
           </li>
         )}
-        {subject.chapters.map((c, i) => (
+        {subject.chapters.map((c, i) => {
+          const isTargetToday = targetChapterIds?.has(c.id) ?? false;
+          return (
           <li
             key={c.id}
-            className="group flex items-center gap-2 border-b border-line/70 px-5 py-2.5 transition-colors last:border-b-0 hover:bg-paper"
+            className={cn(
+              "group flex items-center gap-2 border-b border-line/70 px-5 py-2.5 transition-colors last:border-b-0 hover:bg-paper",
+              isTargetToday && "bg-terracotta-tint/35 hover:bg-terracotta-tint/45"
+            )}
           >
             {editingChapterId === c.id ? (
               <form
@@ -435,6 +454,11 @@ function SubjectPanel({
                   <span className={c.done ? "text-ink-muted line-through decoration-line-strong" : "text-ink"}>
                     {c.title}
                   </span>
+                  {isTargetToday && (
+                    <span className="ml-auto rounded-full bg-terracotta-tint px-2 py-0.5 text-[10px] font-semibold text-terracotta-deep">
+                      เป้าหมายวันนี้
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -458,7 +482,8 @@ function SubjectPanel({
               </>
             )}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );
