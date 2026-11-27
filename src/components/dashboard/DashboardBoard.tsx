@@ -245,11 +245,11 @@ export function DashboardBoard() {
         {/* ───────── 2. Visual Analytics Charts ───────── */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Chart A: Donut Chart — Study Hours Share by Subject */}
-          <section className="flex flex-col rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
+          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line-strong bg-sheet p-5 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)] sm:p-6">
             <div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-terracotta uppercase">
-                  <PieChart className="h-3.5 w-3.5" />
+                  <PieChart className="h-3.5 w-3.5 shrink-0" />
                   Study Time Distribution
                 </span>
                 <span className="font-mono text-xs text-ink-muted">
@@ -270,7 +270,7 @@ export function DashboardBoard() {
               </div>
             ) : (
               <>
-                <div className="mt-5 grid items-center gap-6 sm:grid-cols-[11.5rem_1fr]">
+                <div className="mt-5 grid items-center gap-6 sm:grid-cols-[11rem_minmax(0,1fr)]">
                   <DonutChart
                     segments={analytics.subjectStats.map((item) => ({
                       id: item.subject.id,
@@ -281,15 +281,15 @@ export function DashboardBoard() {
                     totalHours={analytics.totalHours}
                   />
 
-                  <ul className="divide-y divide-line">
+                  <ul className="min-w-0 divide-y divide-line">
                     {analytics.subjectStats.map(({ subject, hours, hourSharePct, color }) => (
                       <li
                         key={subject.id}
-                        className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0"
+                        className="flex min-w-0 items-center justify-between gap-2 py-2 text-sm first:pt-0 last:pb-0"
                       >
-                        <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
                           {subject.emoji ? (
-                            <span className="text-base leading-none select-none">{subject.emoji}</span>
+                            <span className="shrink-0 text-base leading-none select-none">{subject.emoji}</span>
                           ) : (
                             <span
                               className="h-3 w-3 shrink-0 rounded-full shadow-2xs"
@@ -298,9 +298,9 @@ export function DashboardBoard() {
                           )}
                           <span className="truncate font-semibold text-ink">{subject.name}</span>
                         </div>
-                        <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
+                        <div className="flex shrink-0 items-center gap-1.5 font-mono text-xs whitespace-nowrap">
                           <span className="font-semibold text-ink">{hours} ชม.</span>
-                          <span className="w-10 text-right text-ink-muted">({hourSharePct}%)</span>
+                          <span className="text-ink-muted">({hourSharePct}%)</span>
                         </div>
                       </li>
                     ))}
@@ -310,9 +310,9 @@ export function DashboardBoard() {
                 {/* Daily study hours breakdown (Mon-Sun) */}
                 <div className="mt-6 border-t border-line pt-4">
                   <p className="mb-3 font-mono text-xs font-semibold tracking-wide text-ink-muted uppercase">
-                    ชั่วโมงอ่านหนังสือรายวัน (จันทร์–อาทิตย์)
+                    ชั่วโมงอ่านหนังสือรายวัน (จันทร์–อาทิตย์ · ชม.)
                   </p>
-                  <div className="grid grid-cols-7 gap-1.5">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
                     {analytics.hoursByDay.map(({ dayName, dayIdx, hours }) => {
                       const heightPct =
                         hours > 0 ? Math.max(18, Math.round((hours / analytics.maxDayHours) * 100)) : 0;
@@ -321,12 +321,12 @@ export function DashboardBoard() {
                         <div
                           key={dayName}
                           className={cn(
-                            "flex flex-col items-center rounded-lg px-1 py-2",
+                            "flex min-w-0 flex-col items-center rounded-lg px-0.5 py-2 sm:px-1",
                             isToday && "bg-terracotta-tint/50"
                           )}
                         >
-                          <span className="font-mono text-[11px] font-semibold text-ink">
-                            {hours > 0 ? `${hours}ชม.` : "–"}
+                          <span className="max-w-full truncate font-mono text-[11px] font-semibold text-ink">
+                            {hours > 0 ? hours : "–"}
                           </span>
                           <div className="my-2 flex h-14 w-3 items-end overflow-hidden rounded-full bg-paper-deep">
                             <div
@@ -355,11 +355,11 @@ export function DashboardBoard() {
           </section>
 
           {/* Chart B: Subject Progress Comparison & Exam Readiness */}
-          <section className="flex flex-col rounded-2xl border border-line-strong bg-sheet p-6 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]">
+          <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line-strong bg-sheet p-5 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)] sm:p-6">
             <div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-sage uppercase">
-                  <BookOpenCheck className="h-3.5 w-3.5" />
+                  <BookOpenCheck className="h-3.5 w-3.5 shrink-0" />
                   Progress & Exam Readiness
                 </span>
                 <span className="font-mono text-xs text-ink-muted">
@@ -381,20 +381,20 @@ export function DashboardBoard() {
                   </p>
                 ) : (
                   analytics.subjectStats.map(({ subject, progress, color }) => (
-                    <div key={subject.id}>
-                      <div className="mb-1.5 flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-2 font-semibold text-ink">
+                    <div key={subject.id} className="min-w-0">
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+                        <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
                           {subject.emoji ? (
-                            <span className="text-sm leading-none select-none">{subject.emoji}</span>
+                            <span className="shrink-0 text-sm leading-none select-none">{subject.emoji}</span>
                           ) : (
                             <span
-                              className="h-2.5 w-2.5 rounded-full"
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: color.hex }}
                             />
                           )}
-                          {subject.name}
+                          <span className="truncate">{subject.name}</span>
                         </span>
-                        <span className="font-mono text-ink-muted">
+                        <span className="shrink-0 font-mono text-ink-muted whitespace-nowrap">
                           {progress.done}/{progress.total} บท ·{" "}
                           <strong className="text-ink">{progress.pct}%</strong>
                         </span>
@@ -1033,9 +1033,11 @@ function DonutChart({
             );
           })}
       </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="font-mono text-2xl font-bold text-ink">{totalHours}</span>
-        <span className="text-[11px] font-medium text-ink-muted">ชม./สัปดาห์</span>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+        <span className="max-w-full truncate font-mono text-2xl leading-tight font-bold text-ink">
+          {totalHours}
+        </span>
+        <span className="text-[11px] leading-tight font-medium text-ink-muted">ชม./สัปดาห์</span>
       </div>
     </div>
   );
