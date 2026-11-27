@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { StudyDesk } from "@/components/table/StudyDesk";
+import { LoadingDesk } from "@/components/PageHeader";
 
 export const metadata: Metadata = {
   title: "Table — StudyTable",
@@ -9,8 +11,9 @@ export const metadata: Metadata = {
 export default function TablePage() {
   return (
     <main>
-      <StudyDesk />
+      <Suspense fallback={<LoadingDesk />}>
+        <StudyDesk />
+      </Suspense>
     </main>
   );
 }
-

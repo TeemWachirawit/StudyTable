@@ -8,8 +8,10 @@ import {
   formatClock,
   formatDuration,
   formatStudySeconds,
+  getTodayTodoItems,
   isClassBlock,
   isStudyBlock,
+  orderSubjectsWithPinned,
   subjectProgress,
   weekdayIndex,
 } from "./study";
@@ -351,5 +353,50 @@ describe("library catalog", () => {
     expect(full.missingChapters).toEqual([]);
   });
 });
+
+describe("today todo and subject pinning", () => {
+  const s1: Subject = { id: "s1", name: "คณิตศาสตร์", color: "terracotta", chapters: [] };
+  const s2: Subject = { id: "s2", name: "ฟิสิกส์", color: "slate", chapters: [] };
+  const s3: Subject = { id: "s3", name: "ชีววิทยา", color: "sage", chapters: [] };
+
+  it("builds today todo list from today's study blocks and custom todos only", () => {
+    // 2026-11-27 is Friday -> weekdayIndex = 4
+    const friday = new Date(2026, 10, 27, 10, 0);
+    const result = getTodayTodoItems(
+      {
+        subjects: [s1, s2, s3],
+        blocks: [
+          { id: "b-class", subjectId: "s1", day: 4, startHour: 9, duration: 2, topic: "Lecture", type: "class" },
+          { id: "b-late", subjectId: "s2", day: 4, startHour: 20, duration: 1, topic: "โจทย์ไฟฟ้า", type: "study" },
+          { id: "b-early", subjectId: "s1", day: 4, startHour: 17, duration: 2, topic: "แคลคูลัส", type: "study" },
+          { id: "b-other-day", subjectId: "s3", day: 0, startHour: 18, duration: 1, topic: "เซลล์", type: "study" },
+        ],
+        exams: [],
+        todos: [
+          { id: "t-block", date: "2026-11-27", subjectId: "s1", title: "แคลคูลัส", done: true, sourceBlockId: "b-early" },
+          { id: "t-custom", date: "2026-11-27", subjectId: "s3", title: "ทบทวนพันธุศาสตร์", done: false },
+          { id: "t-yesterday", date: "2026-11-26", subjectId: "s2", title: "งานเมื่อวาน", done: false },
+        ],
+      },
+      friday
+    );
+
+    expect(result.items).toHaveLength(3);
+    expect(result.items[0]).toMatchObject({ source: "planner", id: "b-early", done: true, subjectId: "s1" });
+    expect(result.items[1]).toMatchObject({ source: "planner", id: "b-late", done: false, subjectId: "s2" });
+    expect(result.items[2]).toMatchObject({ source: "custom", id: "t-custom", done: false, subjectId: "s3" });
+    expect(result.done).toBe(1);
+    expect(result.total).toBe(3);
+    expect(result.pct).toBe(33);
+  });
+
+  it("moves pinned subject to index 0 while preserving order of others", () => {
+    expect(orderSubjectsWithPinned([s1, s2, s3], "s3").map((s) => s.id)).toEqual(["s3", "s1", "s2"]);
+    expect(orderSubjectsWithPinned([s1, s2, s3], "s1").map((s) => s.id)).toEqual(["s1", "s2", "s3"]);
+    expect(orderSubjectsWithPinned([s1, s2, s3], "missing").map((s) => s.id)).toEqual(["s1", "s2", "s3"]);
+    expect(orderSubjectsWithPinned([s1, s2, s3], null).map((s) => s.id)).toEqual(["s1", "s2", "s3"]);
+  });
+});
+
 
 

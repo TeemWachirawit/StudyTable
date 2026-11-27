@@ -9,6 +9,7 @@ const MAX_SUBJECTS = 100;
 const MAX_CHAPTERS_PER_SUBJECT = 300;
 const MAX_BLOCKS = 500;
 const MAX_EXAMS = 200;
+const MAX_TODOS = 300;
 
 function isValidStudyState(state: unknown): state is StudyState {
   if (!state || typeof state !== "object") return false;
@@ -130,6 +131,32 @@ function isValidStudyState(state: unknown): state is StudyState {
           e.extraTopics.some((t) => typeof t !== "string" || t.length > 200)))
     ) {
       return false;
+    }
+  }
+
+  if (s.todos !== undefined) {
+    if (!Array.isArray(s.todos) || s.todos.length > MAX_TODOS) return false;
+    const todoIds = new Set<string>();
+    for (const t of s.todos) {
+      if (
+        !t ||
+        typeof t.id !== "string" ||
+        !t.id ||
+        t.id.length > 100 ||
+        todoIds.has(t.id) ||
+        typeof t.date !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(t.date) ||
+        typeof t.subjectId !== "string" ||
+        (t.subjectId !== "" && !subjectIds.has(t.subjectId)) ||
+        typeof t.title !== "string" ||
+        t.title.length > 200 ||
+        typeof t.done !== "boolean" ||
+        (t.sourceBlockId !== undefined &&
+          (typeof t.sourceBlockId !== "string" || t.sourceBlockId.length > 100))
+      ) {
+        return false;
+      }
+      todoIds.add(t.id);
     }
   }
 

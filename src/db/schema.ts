@@ -167,6 +167,26 @@ export const exams = pgTable(
   ]
 ).enableRLS();
 
+export const dailyTodos = pgTable(
+  "daily_todos",
+  {
+    id: text("id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    subjectId: text("subject_id"),
+    title: text("title").notNull(),
+    done: boolean("done").default(false).notNull(),
+    sourceBlockId: text("source_block_id"),
+    position: integer("position").default(0).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.id] }),
+    index("daily_todos_user_id_date_idx").on(t.userId, t.date),
+  ]
+).enableRLS();
+
 export const feedbackReports = pgTable(
   "feedback_reports",
   {
@@ -190,4 +210,5 @@ export type DbSubject = typeof subjects.$inferSelect;
 export type DbChapter = typeof chapters.$inferSelect;
 export type DbStudyBlock = typeof studyBlocks.$inferSelect;
 export type DbExam = typeof exams.$inferSelect;
+export type DbDailyTodo = typeof dailyTodos.$inferSelect;
 export type DbFeedbackReport = typeof feedbackReports.$inferSelect;

@@ -38,6 +38,7 @@ import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import type { StudyBlock } from "@/types/study";
 import { BlockEditor } from "./BlockEditor";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
+import { TodayTodoCard } from "@/components/todo/TodayTodoCard";
 
 const ROW_REM = 4.5;
 const HOURS = Array.from({ length: LAST_HOUR - FIRST_HOUR }, (_, i) => FIRST_HOUR + i);
@@ -466,6 +467,11 @@ export function PlannerBoard() {
       {header}
 
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+        {/* Today's Study To-Do */}
+        <div className="mb-5">
+          <TodayTodoCard compact />
+        </div>
+
         {/* summary statistics */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-sheet px-4 py-3 shadow-2xs">
           <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-ink-soft">

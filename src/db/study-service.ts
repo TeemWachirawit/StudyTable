@@ -1,12 +1,12 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { chapters, exams, studyBlocks, subjects } from "./schema";
+import { chapters, dailyTodos, exams, studyBlocks, subjects } from "./schema";
 import type { StudyState } from "@/types/study";
 
 export async function getUserStudyState(userId: string): Promise<StudyState | null> {
   if (!db) return null;
 
-  const [subjectRows, chapterRows, blockRows, examRows] = await Promise.all([
+  const [subjectRows, chapterRows, blockRows, examRows, todoRows] = await Promise.all([
     db
       .select()
       .from(subjects)
@@ -19,6 +19,11 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
       .orderBy(asc(chapters.position)),
     db.select().from(studyBlocks).where(eq(studyBlocks.userId, userId)),
     db.select().from(exams).where(eq(exams.userId, userId)),
+    db
+      .select()
+      .from(dailyTodos)
+      .where(eq(dailyTodos.userId, userId))
+      .orderBy(asc(dailyTodos.position)),
   ]);
 
   const chaptersBySubject = new Map<string, typeof chapterRows>();
@@ -70,6 +75,14 @@ export async function getUserStudyState(userId: string): Promise<StudyState | nu
       extraTopics: e.extraTopics ?? [],
       notes: e.notes,
     })),
+    todos: todoRows.map((t) => ({
+      id: t.id,
+      date: t.date,
+      subjectId: t.subjectId ?? "",
+      title: t.title,
+      done: t.done,
+      sourceBlockId: t.sourceBlockId || undefined,
+    })),
   };
 }
 
@@ -77,6 +90,7 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
   if (!db) throw new Error("DATABASE_NOT_CONFIGURED");
 
   await db.transaction(async (tx) => {
+    await tx.delete(dailyTodos).where(eq(dailyTodos.userId, userId));
     await tx.delete(exams).where(eq(exams.userId, userId));
     await tx.delete(studyBlocks).where(eq(studyBlocks.userId, userId));
     await tx.delete(chapters).where(eq(chapters.userId, userId));
@@ -149,6 +163,22 @@ export async function saveUserStudyState(userId: string, state: StudyState): Pro
           chapterIds: Array.isArray(e.chapterIds) ? e.chapterIds : [],
           extraTopics: Array.isArray(e.extraTopics) ? e.extraTopics : [],
           notes: e.notes ?? "",
+        }))
+      );
+    }
+
+    const todos = state.todos ?? [];
+    if (todos.length > 0) {
+      await tx.insert(dailyTodos).values(
+        todos.map((t, idx) => ({
+          id: t.id,
+          userId,
+          date: t.date,
+          subjectId: t.subjectId || null,
+          title: t.title,
+          done: Boolean(t.done),
+          sourceBlockId: t.sourceBlockId || null,
+          position: idx,
         }))
       );
     }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, Library, Pencil, Plus, Timer, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Check, Library, Pencil, Pin, Plus, Timer, X } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
-import { daysUntil, formatStudySeconds, subjectProgress } from "@/lib/study";
+import { daysUntil, formatStudySeconds, orderSubjectsWithPinned, subjectProgress } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
@@ -16,16 +17,42 @@ import { SubjectEditor } from "./SubjectEditor";
 
 export function StudyDesk() {
   const { state, dispatch, hydrated } = useStudyStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [editing, setEditing] = useState<Subject | "new" | null>(null);
   const [focusSubjectId, setFocusSubjectId] = useState<string>("");
   const timerSectionRef = useRef<HTMLDivElement>(null);
+
+  const paramSubjectId = searchParams.get("subject");
+  const pinnedSubjectId = useMemo(() => {
+    if (paramSubjectId && state.subjects.some((s) => s.id === paramSubjectId)) {
+      return paramSubjectId;
+    }
+    return null;
+  }, [paramSubjectId, state.subjects]);
+
+  const orderedSubjects = useMemo(
+    () => orderSubjectsWithPinned(state.subjects, pinnedSubjectId),
+    [state.subjects, pinnedSubjectId]
+  );
+
+  // When arriving from Today's To-Do (?subject=...), automatically target it in FocusTimer
+  useEffect(() => {
+    if (pinnedSubjectId) {
+      setFocusSubjectId(pinnedSubjectId);
+    }
+  }, [pinnedSubjectId]);
 
   const effectiveFocusSubjectId = useMemo(() => {
     if (focusSubjectId && state.subjects.some((s) => s.id === focusSubjectId)) {
       return focusSubjectId;
     }
-    return state.subjects[0]?.id ?? "";
-  }, [focusSubjectId, state.subjects]);
+    return orderedSubjects[0]?.id ?? "";
+  }, [focusSubjectId, state.subjects, orderedSubjects]);
+
+  const clearPinnedSubject = () => {
+    router.replace("/table", { scroll: false });
+  };
 
   const totals = useMemo(() => {
     const all = state.subjects.flatMap((s) => s.chapters);
@@ -120,10 +147,12 @@ export function StudyDesk() {
           </div>
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-2">
-            {state.subjects.map((s) => (
+            {orderedSubjects.map((s) => (
               <SubjectPanel
                 key={s.id}
                 subject={s}
+                isPinned={s.id === pinnedSubjectId}
+                onUnpin={clearPinnedSubject}
                 isFocused={s.id === effectiveFocusSubjectId}
                 onFocus={() => handleFocusSubject(s.id)}
                 onEdit={() => setEditing(s)}
@@ -177,11 +206,15 @@ function Stat({
 
 function SubjectPanel({
   subject,
+  isPinned,
+  onUnpin,
   isFocused,
   onFocus,
   onEdit,
 }: {
   subject: Subject;
+  isPinned: boolean;
+  onUnpin: () => void;
   isFocused: boolean;
   onFocus: () => void;
   onEdit: () => void;
@@ -216,9 +249,29 @@ function SubjectPanel({
   return (
     <section
       aria-labelledby={`subject-${subject.id}`}
-      className="flex flex-col overflow-hidden rounded-xl border border-line-strong bg-sheet shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]"
+      className={cn(
+        "flex flex-col overflow-hidden rounded-xl border bg-sheet shadow-[0_12px_28px_-22px_rgba(15,23,42,0.12)]",
+        isPinned
+          ? "border-terracotta/60 ring-2 ring-terracotta/30"
+          : "border-line-strong"
+      )}
     >
       <div className={cn("h-1.5", color.solidClass)} style={color.solidStyle} />
+      {isPinned && (
+        <div className="flex items-center justify-between gap-2 border-b border-terracotta/20 bg-terracotta-tint/60 px-5 py-2 text-xs font-semibold text-terracotta-deep">
+          <span className="inline-flex items-center gap-1.5">
+            <Pin className="h-3.5 w-3.5" />
+            กำลังอ่านจาก To-Do วันนี้
+          </span>
+          <button
+            type="button"
+            onClick={onUnpin}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium text-terracotta-deep/80 transition-colors hover:bg-terracotta/15 hover:text-terracotta-deep"
+          >
+            <X className="h-3 w-3" /> คืนลำดับปกติ
+          </button>
+        </div>
+      )}
       <div className="px-5 pt-4 pb-5">
         <div className="flex items-start justify-between gap-3">
           <div>

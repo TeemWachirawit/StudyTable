@@ -39,9 +39,13 @@ type Action =
   | { type: "deleteBlock"; id: string }
   | { type: "saveExam"; exam: Exam }
   | { type: "saveExams"; exams: Exam[] }
-  | { type: "deleteExam"; id: string };
+  | { type: "deleteExam"; id: string }
+  | { type: "addTodo"; date: string; subjectId: string; title: string }
+  | { type: "toggleTodo"; id: string }
+  | { type: "toggleBlockTodo"; date: string; blockId: string; subjectId: string; title: string }
+  | { type: "deleteTodo"; id: string };
 
-const empty: StudyState = { subjects: [], blocks: [], exams: [] };
+const empty: StudyState = { subjects: [], blocks: [], exams: [], todos: [] };
 
 function upsert<T extends { id: string }>(list: T[], item: T): T[] {
   return list.some((x) => x.id === item.id)
@@ -128,6 +132,9 @@ function reducer(state: StudyState, action: Action): StudyState {
         subjects: state.subjects.filter((s) => s.id !== action.id),
         blocks: state.blocks.filter((b) => b.subjectId !== action.id),
         exams: state.exams.filter((e) => e.subjectId !== action.id),
+        todos: (state.todos ?? []).map((t) =>
+          t.subjectId === action.id ? { ...t, subjectId: "" } : t
+        ),
       };
     case "addStudyTime": {
       const add = Math.max(0, Math.floor(action.seconds));
@@ -233,6 +240,65 @@ function reducer(state: StudyState, action: Action): StudyState {
     }
     case "deleteExam":
       return { ...state, exams: state.exams.filter((e) => e.id !== action.id) };
+
+    case "addTodo": {
+      const title = action.title.trim();
+      if (!title) return state;
+      const todos = state.todos ?? [];
+      return {
+        ...state,
+        todos: [
+          ...todos,
+          {
+            id: uid(),
+            date: action.date,
+            subjectId: action.subjectId,
+            title,
+            done: false,
+          },
+        ],
+      };
+    }
+    case "toggleTodo":
+      return {
+        ...state,
+        todos: (state.todos ?? []).map((t) =>
+          t.id === action.id ? { ...t, done: !t.done } : t
+        ),
+      };
+    case "toggleBlockTodo": {
+      const todos = state.todos ?? [];
+      const existing = todos.find(
+        (t) => t.date === action.date && t.sourceBlockId === action.blockId
+      );
+      if (existing) {
+        return {
+          ...state,
+          todos: todos.map((t) =>
+            t.id === existing.id ? { ...t, done: !t.done } : t
+          ),
+        };
+      }
+      return {
+        ...state,
+        todos: [
+          ...todos,
+          {
+            id: uid(),
+            date: action.date,
+            subjectId: action.subjectId,
+            title: action.title,
+            done: true,
+            sourceBlockId: action.blockId,
+          },
+        ],
+      };
+    }
+    case "deleteTodo":
+      return {
+        ...state,
+        todos: (state.todos ?? []).filter((t) => t.id !== action.id),
+      };
   }
 }
 

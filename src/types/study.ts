@@ -56,9 +56,22 @@ export interface Exam {
   notes: string;
 }
 
+export interface DailyTodo {
+  id: string;
+  /** YYYY-MM-DD (local date) */
+  date: string;
+  /** Optional linked Subject ID (empty string if general task) */
+  subjectId: string;
+  title: string;
+  done: boolean;
+  /** If tracking completion of a Planner StudyBlock for that date */
+  sourceBlockId?: string;
+}
+
 export interface StudyState {
   subjects: Subject[];
   blocks: StudyBlock[];
   exams: Exam[];
+  todos?: DailyTodo[];
 }
 

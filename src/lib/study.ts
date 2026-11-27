@@ -138,6 +138,88 @@ export function isStudyBlock(b: StudyBlock): boolean {
   return b.type !== "class";
 }
 
+export interface TodayTodoItem {
+  /** Unique render key */
+  key: string;
+  /** "planner" = auto-pulled from today's study blocks; "custom" = user-added daily task */
+  source: "planner" | "custom";
+  /** For custom todos: DailyTodo.id; for planner blocks: StudyBlock.id */
+  id: string;
+  subjectId: string;
+  title: string;
+  done: boolean;
+  /** Optional formatted time range for planner blocks (e.g. "18:00–20:00") */
+  timeLabel?: string;
+}
+
+/**
+ * Builds Today's Study To-Do list by combining:
+ * 1. Today's planned self-study blocks (auto-synced from Planner, completion tracked per date via sourceBlockId)
+ * 2. Custom daily to-do items created for today's date
+ */
+export function getTodayTodoItems(
+  state: StudyState,
+  today: Date = new Date()
+): { items: TodayTodoItem[]; done: number; total: number; pct: number } {
+  const todayISO = toISODate(today);
+  const todayIdx = weekdayIndex(today);
+  const todos = state.todos ?? [];
+
+  const subjectNameById = new Map(state.subjects.map((s) => [s.id, s.name]));
+
+  const blockDoneMap = new Map<string, boolean>();
+  for (const t of todos) {
+    if (t.date === todayISO && t.sourceBlockId) {
+      blockDoneMap.set(t.sourceBlockId, t.done);
+    }
+  }
+
+  const plannerItems: TodayTodoItem[] = state.blocks
+    .filter((b) => b.day === todayIdx && isStudyBlock(b))
+    .sort((a, b) => blockStartMinutes(a) - blockStartMinutes(b))
+    .map((b) => ({
+      key: `block:${b.id}`,
+      source: "planner" as const,
+      id: b.id,
+      subjectId: b.subjectId,
+      title: b.topic.trim() || `อ่าน ${subjectNameById.get(b.subjectId) ?? "วิชาตามตาราง"}`,
+      done: blockDoneMap.get(b.id) ?? false,
+      timeLabel: formatBlockTime(b),
+    }));
+
+  const customItems: TodayTodoItem[] = todos
+    .filter((t) => t.date === todayISO && !t.sourceBlockId)
+    .map((t) => ({
+      key: `todo:${t.id}`,
+      source: "custom" as const,
+      id: t.id,
+      subjectId: t.subjectId,
+      title: t.title,
+      done: t.done,
+    }));
+
+  const items = [...plannerItems, ...customItems];
+  const total = items.length;
+  const done = items.filter((i) => i.done).length;
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  return { items, done, total, pct };
+}
+
+/**
+ * Returns a new subject array with `pinnedSubjectId` moved to index 0,
+ * preserving the original order of all other subjects.
+ */
+export function orderSubjectsWithPinned(
+  subjects: Subject[],
+  pinnedSubjectId: string | null | undefined
+): Subject[] {
+  if (!pinnedSubjectId) return subjects;
+  const idx = subjects.findIndex((s) => s.id === pinnedSubjectId);
+  if (idx <= 0) return subjects;
+  return [subjects[idx], ...subjects.slice(0, idx), ...subjects.slice(idx + 1)];
+}
+
 /** Starter data so first-time visitors see a filled-in desk with classes and study slots. */
 export function createSeedState(today: Date = new Date()): StudyState {
   const ch = (title: string, done = false) => ({ id: uid(), title, done });

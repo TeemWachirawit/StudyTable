@@ -45,6 +45,7 @@ import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
 import { BlockEditor } from "@/components/planner/BlockEditor";
 import { ExamEditor } from "@/components/exam/ExamEditor";
+import { TodayTodoCard } from "@/components/todo/TodayTodoCard";
 import type { Exam, StudyBlock, Subject } from "@/types/study";
 
 type ManagerTab = "subjects" | "schedule" | "exams";
@@ -237,6 +238,9 @@ export function DashboardBoard() {
             dotClass="bg-mustard"
           />
         </dl>
+
+        {/* ───────── 1.5 Today's Study To-Do ───────── */}
+        <TodayTodoCard />
 
         {/* ───────── 2. Visual Analytics Charts ───────── */}
         <div className="grid gap-6 lg:grid-cols-2">
