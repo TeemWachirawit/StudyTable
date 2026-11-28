@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Library, Pencil, Pin, Plus, Timer, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Library, Pencil, Pin, Plus, Timer, X } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
 import { getSubjectColor } from "@/lib/colors";
 import { daysUntil, formatStudySeconds, orderSubjectsWithPinned, subjectProgress } from "@/lib/study";
@@ -237,11 +237,16 @@ function SubjectPanel({
   onEdit: () => void;
 }) {
   const { state, dispatch } = useStudyStore();
+  const [expanded, setExpanded] = useState(isPinned);
   const [newChapter, setNewChapter] = useState("");
   const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const color = getSubjectColor(subject.color);
   const { done, total, pct } = subjectProgress(subject);
+
+  useEffect(() => {
+    if (isPinned) setExpanded(true);
+  }, [isPinned]);
 
   const plannedHours = state.blocks.filter((b) => b.subjectId === subject.id).reduce((n, b) => n + b.duration, 0);
   const nextExam = state.exams
@@ -289,7 +294,10 @@ function SubjectPanel({
           </button>
         </div>
       )}
-      <div className="px-5 pt-4 pb-5">
+      <div
+        onClick={() => setExpanded((v) => !v)}
+        className="cursor-pointer px-5 pt-4 pb-5 transition-colors hover:bg-paper/50"
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -308,7 +316,10 @@ function SubjectPanel({
                 {subject.name}
               </h2>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-muted">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-muted"
+            >
               <span className="inline-flex items-center gap-1 font-medium text-plum-deep">
                 <Timer className="h-3 w-3" />
                 อ่านแล้ว {formatStudySeconds(subject.studySeconds ?? 0)}
@@ -333,7 +344,7 @@ function SubjectPanel({
               )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={onFocus}
@@ -356,13 +367,25 @@ function SubjectPanel({
             >
               <Pencil className="h-4 w-4" />
             </button>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              aria-label={expanded ? `ซ่อนบทเรียนวิชา ${subject.name}` : `ดูบทเรียนวิชา ${subject.name}`}
+              className="rounded-lg p-1.5 text-ink-muted transition-colors hover:bg-paper-deep hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+            >
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
           </div>
         </div>
 
         <div className="mt-4">
-          <div className="mb-1.5 flex justify-between text-sm">
+          <div className="mb-1.5 flex items-center justify-between text-sm">
             <span className="text-ink-soft">
               อ่านแล้ว {done} จาก {total} บท
+              {!expanded && (
+                <span className="ml-2 text-xs text-ink-muted">(คลิกเพื่อดูบทเรียน)</span>
+              )}
             </span>
             <span className={cn("font-mono font-semibold", color.textClass)} style={color.textStyle}>
               {pct}%
@@ -384,6 +407,8 @@ function SubjectPanel({
         </div>
       </div>
 
+      {expanded && (
+        <>
       {/* Quick Add Chapter moved to top for instant access */}
       <form
         className="flex gap-2 border-t border-line bg-paper/60 px-5 py-2.5"
@@ -492,6 +517,8 @@ function SubjectPanel({
           );
         })}
       </ul>
+        </>
+      )}
     </section>
   );
 }
