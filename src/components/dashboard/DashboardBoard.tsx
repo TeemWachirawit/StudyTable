@@ -2,24 +2,20 @@
 
 import { useMemo, useState } from "react";
 import {
-  BookOpen,
   BookOpenCheck,
   BookPlus,
   CalendarDays,
-  Check,
   Clock,
   GraduationCap,
   Hourglass,
   MapPin,
-  Palette,
   Pencil,
   PieChart,
   Plus,
   Trash2,
-  X,
 } from "lucide-react";
 import { useStudyStore } from "@/hooks/use-study-store";
-import { getSubjectColor, isLightHex } from "@/lib/colors";
+import { getSubjectColor } from "@/lib/colors";
 import {
   DAYS,
   DAYS_SHORT,
@@ -29,7 +25,6 @@ import {
   examReadiness,
   formatBlockTime,
   formatDuration,
-  formatHour,
   formatThaiDate,
   isClassBlock,
   isStudyBlock,
@@ -40,19 +35,17 @@ import {
 } from "@/lib/study";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
 import { LoadingDesk, PageHeader } from "@/components/PageHeader";
 import { SubjectEditor } from "@/components/table/SubjectEditor";
 import { BlockEditor } from "@/components/planner/BlockEditor";
 import { ExamEditor } from "@/components/exam/ExamEditor";
-import { TodayTodoCard } from "@/components/todo/TodayTodoCard";
 import type { Exam, StudyBlock, Subject } from "@/types/study";
 
-type ManagerTab = "subjects" | "schedule" | "exams";
+type ManagerTab = "schedule" | "exams";
 
 export function DashboardBoard() {
   const { state, dispatch, hydrated } = useStudyStore();
-  const [activeTab, setActiveTab] = useState<ManagerTab>("subjects");
+  const [activeTab, setActiveTab] = useState<ManagerTab>("schedule");
   const [editingSubject, setEditingSubject] = useState<Subject | "new" | null>(null);
   const [editingBlock, setEditingBlock] = useState<StudyBlock | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
@@ -165,8 +158,8 @@ export function DashboardBoard() {
     <PageHeader
       eyebrow="Dashboard"
       tone="plum"
-      title="แดชบอร์ดภาพรวมและจัดการข้อมูล"
-      description="ดูแผนภูมิสัดส่วนชั่วโมงเรียน ความคืบหน้าแต่ละรายวิชา และแก้ไขวิชา สี บทเรียน ตารางเวลา หรือวันสอบได้ในหน้าเดียว"
+      title="แดชบอร์ดภาพรวม"
+      description="ดูแผนภูมิสัดส่วนชั่วโมงเรียน ความคืบหน้าแต่ละรายวิชา และจัดการตารางเวลาหรือวันสอบได้ในหน้าเดียว"
       actions={
         hydrated ? (
           <>
@@ -224,7 +217,7 @@ export function DashboardBoard() {
           <KpiCard
             label="รายวิชาทั้งหมด"
             value={`${state.subjects.length} วิชา`}
-            sub="คลิกที่สีวิชาเพื่อเปลี่ยนสีได้ทันที"
+            sub={`รวมทั้งหมด ${analytics.totalChapters} บทเรียน`}
             dotClass="bg-plum"
           />
           <KpiCard
@@ -238,9 +231,6 @@ export function DashboardBoard() {
             dotClass="bg-mustard"
           />
         </dl>
-
-        {/* ───────── 1.5 Today's Study To-Do ───────── */}
-        <TodayTodoCard />
 
         {/* ───────── 2. Visual Analytics Charts ───────── */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -482,10 +472,10 @@ export function DashboardBoard() {
           <div className="flex flex-col justify-between gap-4 border-b border-line px-6 py-4 sm:flex-row sm:items-center">
             <div>
               <h2 className="font-display text-xl font-bold text-ink">
-                จัดการและแก้ไขข้อมูลทั้งหมด
+                จัดการตารางเวลาและรายการสอบ
               </h2>
               <p className="text-xs text-ink-soft">
-                แก้ไขรายวิชา เปลี่ยนสีวิชา จัดการบทเรียน ตารางอ่านหนังสือ และวันสอบได้ทันทีจากตรงนี้
+                แก้ไขตารางเรียน ตารางอ่านหนังสือ และวันสอบได้ทันทีจากตรงนี้
               </p>
             </div>
 
@@ -494,21 +484,6 @@ export function DashboardBoard() {
               aria-label="หมวดหมู่ข้อมูล"
               className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-paper p-1"
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "subjects"}
-                onClick={() => setActiveTab("subjects")}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-                  activeTab === "subjects"
-                    ? "bg-sheet text-ink shadow-2xs"
-                    : "text-ink-soft hover:text-ink"
-                )}
-              >
-                <BookOpenCheck className="h-3.5 w-3.5 text-sage" />
-                วิชาและบทเรียน ({state.subjects.length})
-              </button>
               <button
                 type="button"
                 role="tab"
@@ -543,43 +518,7 @@ export function DashboardBoard() {
           </div>
 
           <div className="p-6">
-            {/* TAB 1: Subjects & Chapters Manager */}
-            {activeTab === "subjects" && (
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-ink-soft">
-                    คลิกที่ปุ่มวงกลมสีของแต่ละวิชาเพื่อเปลี่ยนสีเป็นเฉดที่ต้องการ หรือเพิ่ม/แก้ไขบทเรียนได้โดยตรง
-                  </p>
-                  <Button size="sm" onClick={() => setEditingSubject("new")}>
-                    <Plus className="h-4 w-4" /> เพิ่มวิชาใหม่
-                  </Button>
-                </div>
-
-                {state.subjects.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-line-strong py-12 text-center">
-                    <p className="font-semibold text-ink">ยังไม่มีรายวิชา</p>
-                    <p className="mt-1 text-sm text-ink-soft">
-                      เริ่มเพิ่มวิชาแรกเพื่อจัดการบทเรียนและตารางเวลา
-                    </p>
-                    <Button className="mt-4" size="sm" onClick={() => setEditingSubject("new")}>
-                      <Plus className="h-4 w-4" /> เพิ่มวิชาแรก
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid items-start gap-5 lg:grid-cols-2">
-                    {state.subjects.map((subject) => (
-                      <DashboardSubjectCard
-                        key={subject.id}
-                        subject={subject}
-                        onEditSubject={() => setEditingSubject(subject)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 2: Study & Class Schedule Manager */}
+            {/* TAB 1: Study & Class Schedule Manager */}
             {activeTab === "schedule" && (
               <div className="space-y-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1039,187 +978,6 @@ function DonutChart({
         </span>
         <span className="text-[11px] leading-tight font-medium text-ink-muted">ชม./สัปดาห์</span>
       </div>
-    </div>
-  );
-}
-
-function DashboardSubjectCard({
-  subject,
-  onEditSubject,
-}: {
-  subject: Subject;
-  onEditSubject: () => void;
-}) {
-  const { dispatch } = useStudyStore();
-  const [newChapter, setNewChapter] = useState("");
-  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
-  const [editingTitle, setEditingTitle] = useState("");
-
-  const color = getSubjectColor(subject.color);
-  const { done, total, pct } = subjectProgress(subject);
-
-  const commitChapterEdit = (chapterId: string) => {
-    const trimmed = editingTitle.trim();
-    if (trimmed) {
-      dispatch({ type: "updateChapter", subjectId: subject.id, chapterId, title: trimmed });
-    }
-    setEditingChapterId(null);
-  };
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-line-strong bg-sheet">
-      <div className="h-1.5" style={{ backgroundColor: color.hex }} />
-      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {/* Direct 1-click custom color picker */}
-          <label
-            className="relative flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/60 shadow-xs ring-1 ring-line-strong transition-transform hover:scale-110"
-            style={{ backgroundColor: color.hex }}
-            title="คลิกเพื่อเปลี่ยนสีวิชานี้ทันที"
-          >
-            <input
-              type="color"
-              value={color.hex}
-              onChange={(e) =>
-                dispatch({
-                  type: "saveSubject",
-                  id: subject.id,
-                  name: subject.name,
-                  color: e.target.value,
-                  emoji: subject.emoji,
-                })
-              }
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              aria-label={`เปลี่ยนสีวิชา ${subject.name}`}
-            />
-            <Palette
-              className={cn(
-                "h-3 w-3 opacity-85",
-                isLightHex(color.hex) ? "text-ink" : "text-white"
-              )}
-            />
-          </label>
-          <div className="min-w-0">
-            <h3 className="truncate font-display text-base font-bold text-ink">
-              {subject.emoji && <span className="mr-1.5 select-none">{subject.emoji}</span>}
-              {subject.name}
-            </h3>
-            <p className="font-mono text-[11px] text-ink-muted">
-              อ่านจบ {done}/{total} บท ({pct}%)
-            </p>
-          </div>
-        </div>
-
-        <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs" onClick={onEditSubject}>
-          <Pencil className="h-3.5 w-3.5" /> แก้ไขวิชา
-        </Button>
-      </div>
-
-      {/* Quick Add Chapter on top (consistent with StudyDesk) */}
-      <form
-        className="flex gap-2 border-b border-line bg-paper/60 px-4 py-2.5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const trimmed = newChapter.trim();
-          if (!trimmed) return;
-          dispatch({ type: "addChapter", subjectId: subject.id, title: trimmed });
-          setNewChapter("");
-        }}
-      >
-        <input
-          className={cn(inputClass, "h-8 bg-sheet text-xs")}
-          placeholder="+ เพิ่มบทเรียนใหม่..."
-          value={newChapter}
-          onChange={(e) => setNewChapter(e.target.value)}
-          aria-label={`เพิ่มบทเรียนในวิชา ${subject.name}`}
-        />
-        <Button type="submit" size="sm" variant="outline" className="h-8 px-2.5 text-xs" disabled={!newChapter.trim()}>
-          <Plus className="h-3.5 w-3.5" /> เพิ่ม
-        </Button>
-      </form>
-
-      {/* Chapters list */}
-      <ul className="divide-y divide-line/60">
-        {subject.chapters.length === 0 ? (
-          <li className="px-4 py-4 text-xs text-ink-muted">ยังไม่มีบทเรียนในวิชานี้</li>
-        ) : (
-          subject.chapters.map((c, idx) => (
-            <li
-              key={c.id}
-              className="group flex items-center gap-2 px-4 py-2 text-xs hover:bg-paper"
-            >
-              {editingChapterId === c.id ? (
-                <form
-                  className="flex flex-1 items-center gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    commitChapterEdit(c.id);
-                  }}
-                >
-                  <input
-                    className={cn(inputClass, "h-7 text-xs")}
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onBlur={() => commitChapterEdit(c.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") setEditingChapterId(null);
-                    }}
-                    autoFocus
-                  />
-                </form>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={c.done}
-                    onClick={() =>
-                      dispatch({ type: "toggleChapter", subjectId: subject.id, chapterId: c.id })
-                    }
-                    className="flex flex-1 items-center gap-2.5 text-left"
-                  >
-                    <span
-                      className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                        c.done ? "border-sage bg-sage text-sheet" : "border-line-strong bg-sheet"
-                      )}
-                    >
-                      {c.done && <Check className="h-3 w-3" strokeWidth={3} />}
-                    </span>
-                    <span className="font-mono text-[11px] text-ink-muted">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <span className={c.done ? "text-ink-muted line-through" : "text-ink"}>
-                      {c.title}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingChapterId(c.id);
-                      setEditingTitle(c.title);
-                    }}
-                    className="rounded p-1 text-ink-muted hover:bg-paper-deep hover:text-ink"
-                    aria-label="แก้ไขชื่อบท"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      dispatch({ type: "deleteChapter", subjectId: subject.id, chapterId: c.id })
-                    }
-                    className="rounded p-1 text-ink-muted hover:bg-danger-tint hover:text-danger-deep"
-                    aria-label="ลบบทเรียน"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </>
-              )}
-            </li>
-          ))
-        )}
-      </ul>
     </div>
   );
 }
